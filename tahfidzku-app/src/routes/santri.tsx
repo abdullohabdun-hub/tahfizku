@@ -17,10 +17,10 @@ function SantriLayout() {
   }
 
   const navItems = [
-    { name: "Beranda", path: "/santri", icon: <Home className="w-7 h-7" /> },
-    { name: "Lapor", path: "/santri/input", icon: <PencilLine className="w-7 h-7" /> },
-    { name: "Ujian", path: "/santri/ujian", icon: <Award className="w-7 h-7" /> },
-    { name: "Profil", path: "/santri/profil", icon: <User className="w-7 h-7" /> },
+    { name: "Beranda", path: "/santri", icon: <Home className="w-5 h-5" /> },
+    { name: "Lapor", path: "/santri/input", icon: <PencilLine className="w-5 h-5" /> },
+    { name: "Ujian", path: "/santri/ujian", icon: <Award className="w-5 h-5" /> },
+    { name: "Profil", path: "/santri/profil", icon: <User className="w-5 h-5" /> },
   ]
 
   return (
@@ -30,12 +30,12 @@ function SantriLayout() {
       <header className="bg-white border-b border-slate-200 p-4 sticky top-0 z-50 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2">
           <div className="bg-emerald-600 p-1.5 rounded-md">
-            <BookOpen className="h-5 w-5 text-white" />
+            <BookOpen className="h-4 w-4 text-white" />
           </div>
-          <span className="font-bold text-lg text-emerald-950 tracking-tight">TahfidzKu Santri</span>
+          <span className="font-bold text-base text-emerald-950 tracking-tight">TahfidzKu Santri</span>
         </div>
         <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors md:hidden">
-          <LogOut className="w-5 h-5" />
+          <LogOut className="w-4 h-4" />
         </button>
       </header>
 
@@ -45,7 +45,7 @@ function SantriLayout() {
       </main>
 
       {/* Bottom Navigation (Mobile) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center h-16 z-50 px-2 pb-safe shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around items-center h-14 z-50 px-2 pb-safe shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)]">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path
           return (

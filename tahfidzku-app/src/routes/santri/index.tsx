@@ -34,42 +34,42 @@ function SantriDashboard() {
       
       {/* Header Welcome */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Ahlan, {profil?.nama}! 👋</h1>
-        <p className="text-slate-500">Semoga istiqomah menjaga hafalan hari ini.</p>
+        <h1 className="text-xl font-bold text-slate-800">Ahlan, {profil?.nama}! 👋</h1>
+        <p className="text-sm text-slate-500 mt-0.5">Semoga istiqomah menjaga hafalan hari ini.</p>
       </div>
 
       {/* Streak Card */}
-      <div className="bg-gradient-to-r from-orange-400 to-amber-500 rounded-2xl p-5 text-white shadow-md flex items-center justify-between">
+      <div className="bg-gradient-to-r from-orange-400 to-amber-500 rounded-2xl p-4 text-white shadow-md flex items-center justify-between">
         <div>
-          <h3 className="font-bold text-lg opacity-90 flex items-center gap-2">
-            <Flame className="w-5 h-5" /> Weekly Streak
+          <h3 className="font-bold text-base opacity-90 flex items-center gap-1.5">
+            <Flame className="w-4 h-4" /> Weekly Streak
           </h3>
-          <p className="text-3xl font-black mt-1">{data?.streak} Hari</p>
-          <p className="text-sm opacity-80 mt-1">Luar biasa! Pertahankan terus.</p>
+          <p className="text-2xl font-bold mt-1">{data?.streak} Hari</p>
+          <p className="text-xs opacity-80 mt-1">Luar biasa! Pertahankan terus.</p>
         </div>
-        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-          <Flame className="w-10 h-10 text-white" />
+        <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+          <Flame className="w-6 h-6 text-white" />
         </div>
       </div>
 
       {/* Progress Hafalan (Recharts) */}
       <Card className="rounded-2xl shadow-sm border-slate-200">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-bold flex items-center gap-2 text-slate-800">
-            <Target className="w-5 h-5 text-emerald-600" /> Progres Hafalan
+          <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-800">
+            <Target className="w-4 h-4 text-emerald-600" /> Progres Hafalan
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
-            <div className="w-32 h-32 relative shrink-0">
+            <div className="w-24 h-24 relative shrink-0">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={chartData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={35}
-                    outerRadius={55}
+                    innerRadius={28}
+                    outerRadius={45}
                     stroke="none"
                     dataKey="value"
                     startAngle={90}
@@ -83,7 +83,7 @@ function SantriDashboard() {
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-xl font-bold text-slate-800">{progress?.percentage}%</span>
+                <span className="text-lg font-bold text-slate-800">{progress?.percentage}%</span>
               </div>
             </div>
             <div className="flex-1">
@@ -105,8 +105,8 @@ function SantriDashboard() {
       {/* Timeline Riwayat Murojaah */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-emerald-600" /> Riwayat Murojaah
+          <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-emerald-600" /> Riwayat Murojaah
           </h2>
           <Link to="/santri/input" className="text-sm text-emerald-600 font-medium hover:underline">
             Lapor Baru
