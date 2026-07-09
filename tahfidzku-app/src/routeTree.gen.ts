@@ -23,6 +23,9 @@ import { Route as UstadzUjianRouteImport } from './routes/ustadz/ujian'
 import { Route as UstadzRiwayatRouteImport } from './routes/ustadz/riwayat'
 import { Route as UstadzProfilRouteImport } from './routes/ustadz/profil'
 import { Route as UstadzInputRouteImport } from './routes/ustadz/input'
+import { Route as AdminUstadzRouteImport } from './routes/admin/ustadz'
+import { Route as AdminSantriRouteImport } from './routes/admin/santri'
+import { Route as AdminKelasRouteImport } from './routes/admin/kelas'
 
 const WaliRoute = WaliRouteImport.update({
   id: '/wali',
@@ -94,6 +97,21 @@ const UstadzInputRoute = UstadzInputRouteImport.update({
   path: '/input',
   getParentRoute: () => UstadzRoute,
 } as any)
+const AdminUstadzRoute = AdminUstadzRouteImport.update({
+  id: '/ustadz',
+  path: '/ustadz',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSantriRoute = AdminSantriRouteImport.update({
+  id: '/santri',
+  path: '/santri',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminKelasRoute = AdminKelasRouteImport.update({
+  id: '/kelas',
+  path: '/kelas',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -102,6 +120,9 @@ export interface FileRoutesByFullPath {
   '/santri': typeof SantriRouteWithChildren
   '/ustadz': typeof UstadzRouteWithChildren
   '/wali': typeof WaliRouteWithChildren
+  '/admin/kelas': typeof AdminKelasRoute
+  '/admin/santri': typeof AdminSantriRoute
+  '/admin/ustadz': typeof AdminUstadzRoute
   '/ustadz/input': typeof UstadzInputRoute
   '/ustadz/profil': typeof UstadzProfilRoute
   '/ustadz/riwayat': typeof UstadzRiwayatRoute
@@ -114,6 +135,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/admin/kelas': typeof AdminKelasRoute
+  '/admin/santri': typeof AdminSantriRoute
+  '/admin/ustadz': typeof AdminUstadzRoute
   '/ustadz/input': typeof UstadzInputRoute
   '/ustadz/profil': typeof UstadzProfilRoute
   '/ustadz/riwayat': typeof UstadzRiwayatRoute
@@ -131,6 +155,9 @@ export interface FileRoutesById {
   '/santri': typeof SantriRouteWithChildren
   '/ustadz': typeof UstadzRouteWithChildren
   '/wali': typeof WaliRouteWithChildren
+  '/admin/kelas': typeof AdminKelasRoute
+  '/admin/santri': typeof AdminSantriRoute
+  '/admin/ustadz': typeof AdminUstadzRoute
   '/ustadz/input': typeof UstadzInputRoute
   '/ustadz/profil': typeof UstadzProfilRoute
   '/ustadz/riwayat': typeof UstadzRiwayatRoute
@@ -149,6 +176,9 @@ export interface FileRouteTypes {
     | '/santri'
     | '/ustadz'
     | '/wali'
+    | '/admin/kelas'
+    | '/admin/santri'
+    | '/admin/ustadz'
     | '/ustadz/input'
     | '/ustadz/profil'
     | '/ustadz/riwayat'
@@ -161,6 +191,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/admin/kelas'
+    | '/admin/santri'
+    | '/admin/ustadz'
     | '/ustadz/input'
     | '/ustadz/profil'
     | '/ustadz/riwayat'
@@ -177,6 +210,9 @@ export interface FileRouteTypes {
     | '/santri'
     | '/ustadz'
     | '/wali'
+    | '/admin/kelas'
+    | '/admin/santri'
+    | '/admin/ustadz'
     | '/ustadz/input'
     | '/ustadz/profil'
     | '/ustadz/riwayat'
@@ -296,14 +332,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UstadzInputRouteImport
       parentRoute: typeof UstadzRoute
     }
+    '/admin/ustadz': {
+      id: '/admin/ustadz'
+      path: '/ustadz'
+      fullPath: '/admin/ustadz'
+      preLoaderRoute: typeof AdminUstadzRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/santri': {
+      id: '/admin/santri'
+      path: '/santri'
+      fullPath: '/admin/santri'
+      preLoaderRoute: typeof AdminSantriRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/kelas': {
+      id: '/admin/kelas'
+      path: '/kelas'
+      fullPath: '/admin/kelas'
+      preLoaderRoute: typeof AdminKelasRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminKelasRoute: typeof AdminKelasRoute
+  AdminSantriRoute: typeof AdminSantriRoute
+  AdminUstadzRoute: typeof AdminUstadzRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminKelasRoute: AdminKelasRoute,
+  AdminSantriRoute: AdminSantriRoute,
+  AdminUstadzRoute: AdminUstadzRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 

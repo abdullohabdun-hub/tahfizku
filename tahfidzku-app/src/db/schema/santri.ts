@@ -3,6 +3,7 @@
 
 import { pgTable, uuid, varchar, integer, timestamp } from 'drizzle-orm/pg-core'
 import { tenants } from './tenants'
+import { kelas } from './kelas'
 
 export const santri = pgTable('santri', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -10,7 +11,7 @@ export const santri = pgTable('santri', {
     .notNull()
     .references(() => tenants.id, { onDelete: 'cascade' }),
   nama: varchar('nama', { length: 255 }).notNull(),
-  kelasId: uuid('kelas_id'),  // FK ke tabel kelas (akan di-reference setelah kelas dibuat)
+  kelasId: uuid('kelas_id').references(() => kelas.id, { onDelete: 'set null' }),
   targetJuz: integer('target_juz').notNull().default(30),
   juzProgress: integer('juz_progress').array().default([]), // Juz yang sudah diselesaikan (contoh: [30, 29])
   hafalanAwal: integer('hafalan_awal').default(0), // Jumlah juz hafalan sebelum masuk sistem
