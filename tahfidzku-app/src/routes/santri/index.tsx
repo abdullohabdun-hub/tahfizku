@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { getSantriDashboardData } from '../../server-fns/santri-functions'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
-import { Flame, Target, BookOpen, Clock, ChevronRight } from 'lucide-react'
+import { Flame, Target, BookOpen, Clock } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { Link } from '@tanstack/react-router'
 import { format } from 'date-fns'
@@ -75,7 +75,7 @@ function SantriDashboard() {
                     startAngle={90}
                     endAngle={-270}
                   >
-                    {chartData.map((entry, index) => (
+                    {chartData.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -129,7 +129,7 @@ function SantriDashboard() {
             <div className="absolute left-8 top-6 bottom-6 w-0.5 bg-slate-100"></div>
             
             <div className="space-y-6 relative">
-              {riwayat.map((item: any, i: number) => (
+              {riwayat.map((item: any) => (
                 <div key={item.id} className="flex gap-4">
                   <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 z-10 ring-4 ring-white">
                     <BookOpen className="w-4 h-4" />
