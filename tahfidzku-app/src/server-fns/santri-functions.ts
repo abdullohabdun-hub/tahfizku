@@ -27,7 +27,7 @@ export const getSantriDashboardData = createServerFn({ method: 'GET' })
         .select()
         .from(setoran)
         .where(eq(setoran.santriId, santriId))
-        .orderBy(desc(setoran.tanggal))
+        .orderBy(desc(setoran.createdAt))
         .limit(5)
 
       // Hitung progress juz
@@ -89,7 +89,7 @@ export const inputMurojaah = createServerFn({ method: 'POST' })
         ustadzId: ustadzId,
         jenis: data.jenis,
         juz: data.juz,
-        halaman: data.halaman,
+        halamanAwal: data.halaman, halamanAkhir: data.halaman,
         surat: data.suratNama,
         ayat: data.ayat || '-',
         kualitas: data.kualitas,

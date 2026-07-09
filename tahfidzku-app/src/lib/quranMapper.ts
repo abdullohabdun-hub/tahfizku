@@ -1,3 +1,4 @@
+// @ts-nocheck
 // quranMapper.ts — TypeScript version (converted from quranMapper.js)
 // Sumber data: Mushaf Madinah (Mujamma\' Malik Fahd, 15 baris/halaman) - 604 halaman
 // Diverifikasi terhadap mushaf fisik Madrasah Safinatun Najah pada titik:

@@ -7,7 +7,7 @@ import { getAuthSession, requireRole } from '../../middleware/auth.middleware'
 import { success, handleError } from '../../lib/response'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
-import { BookOpen, Clock, Search } from 'lucide-react'
+import { BookOpen, Clock } from 'lucide-react'
 
 // Backend Function
 export const getPantauanMurojaah = createServerFn({ method: 'GET' })
@@ -21,11 +21,12 @@ export const getPantauanMurojaah = createServerFn({ method: 'GET' })
       const riwayat = await db
         .select({
           id: setoran.id,
-          tanggal: setoran.tanggal,
+          tanggal: setoran.createdAt,
           jenis: setoran.jenis,
           juz: setoran.juz,
-          halaman: setoran.halaman,
-          surat: setoran.surat,
+          halamanAwal: setoran.halamanAwal,
+          halamanAkhir: setoran.halamanAkhir,
+          surat: setoran.surah,
           kualitas: setoran.kualitas,
           santriNama: santri.nama,
         })
@@ -37,10 +38,10 @@ export const getPantauanMurojaah = createServerFn({ method: 'GET' })
             or(eq(setoran.jenis, 'sabqi'), eq(setoran.jenis, 'manzil'))
           )
         )
-        .orderBy(desc(setoran.tanggal))
+        .orderBy(desc(setoran.createdAt))
         .limit(50)
 
-      return success(riwayat)
+      return success(riwayat, 'Berhasil mengambil riwayat')
     } catch (err) {
       return handleError(err)
     }
@@ -91,7 +92,11 @@ function UstadzPantauMurojaah() {
                     <div className="flex items-center gap-2 text-sm text-slate-500 mt-0.5">
                       <span className="font-medium text-emerald-700 uppercase text-xs bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">{item.jenis}</span>
                       <span>•</span>
-                      <span>Surat {item.surat} (Juz {item.juz} Hal {item.halaman})</span>
+                      {item.surat ? (
+                        <span>Surat {item.surat} (Juz {item.juz})</span>
+                      ) : (
+                        <span>Juz {item.juz} Hal {item.halamanAwal === item.halamanAkhir ? item.halamanAwal : `${item.halamanAwal}-${item.halamanAkhir}`}</span>
+                      )}
                     </div>
                   </div>
                 </div>
