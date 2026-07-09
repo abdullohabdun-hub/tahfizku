@@ -28,6 +28,8 @@ function DataSantriPage() {
 
   const [kelasId, setKelasId] = useState('')
   const [tipe, setTipe] = useState<'reguler' | 'dewasa'>('dewasa')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   // Filters
@@ -96,7 +98,9 @@ function DataSantriPage() {
         batasHafalanSurah: batasHafalanSurah ? batasHafalanSurah : undefined,
         batasHafalanAyat: batasHafalanAyat !== '' ? Number(batasHafalanAyat) : undefined,
         kelasId: kelasId ? kelasId : undefined,
-        tipe
+        tipe,
+        username: tipe === 'dewasa' ? username : undefined,
+        password: tipe === 'dewasa' ? password : undefined
       } 
     }
     
@@ -133,6 +137,8 @@ function DataSantriPage() {
     
     setKelasId(s.kelasId || '')
     setTipe(s.tipe || 'dewasa')
+    setUsername(s.username || '')
+    setPassword('') // Optional when editing
     setShowForm(true)
   }
 
@@ -147,6 +153,8 @@ function DataSantriPage() {
     setBatasHafalanAyat('')
     setKelasId('')
     setTipe('dewasa')
+    setUsername('')
+    setPassword('')
   }
 
   const handleDelete = async (id: string) => {
@@ -258,9 +266,23 @@ function DataSantriPage() {
                 </label>
               </div>
               <p className="text-xs text-slate-500 mt-2">
-                {tipe === 'dewasa' ? 'Santri Dewasa akan dibuatkan akun untuk login mandiri dan input Murojaah.' : 'Santri Reguler terhubung ke akun Wali Santri (Orang Tua).'}
+                {tipe === 'dewasa' ? 'Silakan isi Username dan Password untuk login mandiri Santri.' : 'Santri Reguler terhubung ke akun Wali Santri (Orang Tua).'}
               </p>
             </div>
+
+            {tipe === 'dewasa' && (
+              <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Username / Email / No WA <span className="text-red-500">*</span></label>
+                  <input required={tipe === 'dewasa'} value={username} onChange={e => setUsername(e.target.value)} className="w-full border p-2 rounded-lg bg-white" placeholder="Cth: fulan@gmail.com atau 081234567" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Password Login {editingId && <span className="text-slate-500 font-normal">(Kosongkan jika tidak diubah)</span>}</label>
+                  <input required={tipe === 'dewasa' && !editingId} type="text" value={password} onChange={e => setPassword(e.target.value)} className="w-full border p-2 rounded-lg bg-white" placeholder="Minimal 4 karakter" />
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-2 pt-2">
               <Button type="button" variant="outline" onClick={handleCloseForm}>Batal</Button>
               <Button type="submit" disabled={submitting} className="bg-emerald-600 hover:bg-emerald-700">

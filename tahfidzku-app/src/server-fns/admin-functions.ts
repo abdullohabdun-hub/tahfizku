@@ -166,7 +166,9 @@ export const createSantri = createServerFn({ method: 'POST' })
       batasHafalanSurah: z.string().optional().nullable(),
       batasHafalanAyat: z.number().optional().nullable(),
       kelasId: z.string().optional(),
-      tipe: z.enum(['reguler', 'dewasa']).default('dewasa')
+      tipe: z.enum(['reguler', 'dewasa']).default('dewasa'),
+      username: z.string().optional(),
+      password: z.string().optional()
     })
     return schema.parse(data)
   })
@@ -188,19 +190,25 @@ export const createSantri = createServerFn({ method: 'POST' })
         tipe: data.tipe,
       }).returning({ id: santri.id, nama: santri.nama, tipe: santri.tipe })
 
-      // Jika Santri Dewasa, otomatis buatkan akun login mandiri
+      // Jika Santri Dewasa, wajibkan input username dan password
       if (data.tipe === 'dewasa') {
-        const username = `santri_${newSantri[0].id.substring(0,6)}`
+        if (!data.username || !data.password) {
+          throw new ValidationError('Username dan Password wajib diisi untuk Santri Dewasa')
+        }
+        
+        // Cek duplikasi email/username
+        const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, data.username))
+        if (existing.length > 0) throw new ValidationError('Username/Email/No WA sudah terdaftar')
         
         await db.insert(users).values({
           tenantId: session.user.tenantId,
           nama: data.nama,
-          email: username,
-          passwordHash: '123456', // Default PIN
+          email: data.username,
+          passwordHash: data.password,
           role: 'santri',
           santriId: newSantri[0].id
         })
-        return success(newSantri[0], 'Berhasil menambahkan Santri Dewasa dan Akun Login Default')
+        return success(newSantri[0], 'Berhasil menambahkan Santri Dewasa dan Akun Login')
       }
 
       return success(newSantri[0], 'Berhasil menambahkan Santri Reguler')
@@ -234,7 +242,9 @@ export const updateSantri = createServerFn({ method: 'POST' })
     batasHafalanSurah: z.string().optional().nullable(),
     batasHafalanAyat: z.number().optional().nullable(),
     kelasId: z.string().optional().nullable(),
-    tipe: z.enum(['reguler', 'dewasa']).default('dewasa')
+    tipe: z.enum(['reguler', 'dewasa']).default('dewasa'),
+    username: z.string().optional(),
+    password: z.string().optional()
   }).parse(data))
   .handler(async ({ data }) => {
     try {
@@ -252,6 +262,42 @@ export const updateSantri = createServerFn({ method: 'POST' })
         kelasId: data.kelasId || null,
         tipe: data.tipe,
       }).where(and(eq(santri.id, data.id), eq(santri.tenantId, session.user.tenantId)))
+
+      if (data.tipe === 'dewasa') {
+        if (!data.username) {
+           throw new ValidationError('Username wajib diisi untuk Santri Dewasa')
+        }
+        // Cek username duplikat
+        const existing = await db.select({ id: users.id, santriId: users.santriId }).from(users).where(eq(users.email, data.username))
+        if (existing.length > 0 && existing[0].santriId !== data.id) throw new ValidationError('Username/Email/No WA sudah terdaftar')
+
+        const existingUser = await db.select({ id: users.id }).from(users).where(eq(users.santriId, data.id))
+        
+        const updateData: any = {
+          nama: data.nama,
+          email: data.username
+        }
+        if (data.password) {
+          updateData.passwordHash = data.password
+        }
+
+        if (existingUser.length > 0) {
+          await db.update(users).set(updateData).where(eq(users.santriId, data.id))
+        } else {
+          if (!data.password) throw new ValidationError('Password wajib diisi untuk akun baru')
+          await db.insert(users).values({
+            tenantId: session.user.tenantId,
+            nama: data.nama,
+            email: data.username,
+            passwordHash: data.password,
+            role: 'santri',
+            santriId: data.id
+          })
+        }
+      } else {
+        // jika reguler, hapus akun login user (jika sebelumnya dewasa)
+        await db.delete(users).where(eq(users.santriId, data.id))
+      }
 
       return success(null, 'Berhasil menyimpan Santri')
     } catch (err) {
