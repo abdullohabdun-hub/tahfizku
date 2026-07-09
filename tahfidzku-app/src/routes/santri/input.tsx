@@ -4,7 +4,7 @@ import { inputMurojaah } from '../../server-fns/santri-functions'
 import { Button } from '../../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card'
 import { ArrowLeft, CheckCircle2 } from 'lucide-react'
-import { getMaksimalHalamanRelatif, buatSurahMeta } from '../../../quranMapper.js'
+import { getMaksimalHalamanRelatif, buatSurahMeta } from '../../lib/quranMapper'
 
 export const Route = createFileRoute('/santri/input')({
   component: SantriInputMurojaah,

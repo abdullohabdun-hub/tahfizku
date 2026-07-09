@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { db } from '../db'
 import { setoran, santri } from '../db/schema'
 import { eq, desc, and, sql } from 'drizzle-orm'
-import { getAuthSession, requireRole } from '../lib/session'
+import { getAuthSession, requireRole } from "../middleware/auth.middleware"
 import { success, handleError } from '../lib/response'
 import { AuthenticationError } from '../lib/errors'
 
