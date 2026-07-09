@@ -17,6 +17,7 @@ function DataSantriPage() {
   // Form State
   const [nama, setNama] = useState('')
   const [targetJuz, setTargetJuz] = useState<number>(30)
+  const [hafalanAwal, setHafalanAwal] = useState<number>(0)
   const [kelasId, setKelasId] = useState('')
   const [tipe, setTipe] = useState<'reguler' | 'dewasa'>('dewasa')
   const [submitting, setSubmitting] = useState(false)
@@ -48,6 +49,7 @@ function DataSantriPage() {
       data: { 
         nama, 
         targetJuz: Number(targetJuz), 
+        hafalanAwal: Number(hafalanAwal),
         kelasId: kelasId ? kelasId : undefined,
         tipe
       } 
@@ -56,7 +58,7 @@ function DataSantriPage() {
     if (res.success) {
       alert(res.message || 'Berhasil menambah santri')
       setShowForm(false)
-      setNama(''); setTargetJuz(30); setKelasId(''); setTipe('dewasa')
+      setNama(''); setTargetJuz(30); setHafalanAwal(0); setKelasId(''); setTipe('dewasa')
       loadData()
     } else {
       alert(res.error?.message || 'Gagal')
@@ -98,6 +100,11 @@ function DataSantriPage() {
             <div>
               <label className="block text-sm font-medium mb-1">Target Hafalan (Juz)</label>
               <input required type="number" min={1} max={30} value={targetJuz} onChange={e => setTargetJuz(Number(e.target.value))} className="w-full border p-2 rounded-lg" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Hafalan Awal (Juz)</label>
+              <input type="number" min={0} max={30} value={hafalanAwal} onChange={e => setHafalanAwal(Number(e.target.value))} className="w-full border p-2 rounded-lg" />
+              <p className="text-xs text-slate-500 mt-1">Jumlah juz yang sudah dihafal (Contoh: isi 2 jika sudah hafal Juz 30 & 29).</p>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Pilih Kelas / Halaqoh</label>
@@ -176,6 +183,7 @@ function DataSantriPage() {
                 <th className="p-4 font-semibold text-slate-600">Nama Santri</th>
                 <th className="p-4 font-semibold text-slate-600">Tipe</th>
                 <th className="p-4 font-semibold text-slate-600">Kelas</th>
+                <th className="p-4 font-semibold text-slate-600">Hafalan Awal</th>
                 <th className="p-4 font-semibold text-slate-600">Target</th>
                 <th className="p-4 font-semibold text-slate-600 text-right">Aksi</th>
               </tr>
@@ -210,6 +218,7 @@ function DataSantriPage() {
                     <td className="p-4 text-slate-600">
                       {s.kelasNama ? <span className="bg-slate-100 px-2 py-1 rounded-md text-xs">{s.kelasNama}</span> : <span className="text-slate-400 italic text-xs">Belum ada kelas</span>}
                     </td>
+                    <td className="p-4 text-slate-600">{s.hafalanAwal || 0} Juz</td>
                     <td className="p-4 text-slate-600">{s.targetJuz} Juz</td>
                     <td className="p-4 text-right">
                       <Button variant="ghost" size="sm" onClick={() => handleDelete(s.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50">
