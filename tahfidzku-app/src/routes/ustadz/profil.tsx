@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { User, LogOut } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { useRouter } from '@tanstack/react-router'
 import { logout } from '../../server-fns/auth'
 

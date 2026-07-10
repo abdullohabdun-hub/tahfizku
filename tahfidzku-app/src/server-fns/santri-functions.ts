@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { db } from '../db'
 import { setoran, santri } from '../db/schema'
-import { eq, desc, and, sql } from 'drizzle-orm'
+import { eq, desc } from 'drizzle-orm'
 import { getAuthSession, requireRole } from "../middleware/auth.middleware"
 import { success, handleError } from '../lib/response'
 import { AuthenticationError } from '../lib/errors'
@@ -44,7 +44,7 @@ export const getSantriDashboardData = createServerFn({ method: 'GET' })
           percentage: progressPercentage,
         },
         streak: 5, // Hardcoded for MVP display purposes
-      })
+      }, "Data dashboard berhasil diambil")
     } catch (err) {
       return handleError(err)
     }

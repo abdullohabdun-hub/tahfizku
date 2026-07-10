@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useMemo } from 'react'
-import { Printer, Loader2, Calendar, FileText, ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react'
+import { Printer, Loader2, FileText, ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react'
 import { flexRender, getCoreRowModel, useReactTable, getSortedRowModel } from "@tanstack/react-table"
 import type { SortingState } from "@tanstack/react-table"
 import { getMonthlyReport } from '../../server-fns/admin-reports'

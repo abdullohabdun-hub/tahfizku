@@ -2,7 +2,7 @@
 // Server Functions untuk Autentikasi (Login & Logout)
 
 import { createServerFn } from '@tanstack/react-start'
-import { eq, or } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { db } from '../db'
 import { users } from '../db/schema'
 import { createSession, clearSession, getSession } from '../lib/session'

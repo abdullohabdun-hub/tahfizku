@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import React, { useState, useEffect, useMemo } from 'react'
-import { Check, ChevronDown, Loader2, Info } from 'lucide-react'
+import { Check, ChevronDown, Loader2, Info, Settings2 } from 'lucide-react'
 import { getSantriList, createSetoran } from '../../server-fns/ustadz'
 import { 
   buatSurahMetaOtomatis, 
@@ -8,7 +8,11 @@ import {
   prefillZiyadahBerikutnya, 
   surahByNomor, 
   JUZ_TABLE,
-  getTotalHalamanJuz
+  parseHalamanPecahan,
+  terapkanOverrideAyat,
+  labelRentangAyatZiyadah,
+  urutanJuzStandar,
+  posisiTerakhirDariJumlahJuzSelesai
 } from '../../lib/quranMapper'
 
 export const Route = createFileRoute('/ustadz/input')({
@@ -50,26 +54,29 @@ const ACCENTS = {
     chipBg: "bg-indigo-100",
     chipText: "text-indigo-800",
   },
-};
+}
 
 const JENIS_TABS = [
-  { id: 'ziyadah', label: 'Ziyadah', accent: 'emerald', desc: 'Hafalan baru' },
-  { id: 'sabqi', label: 'Sabqi', accent: 'amber', desc: 'Murojaah dekat' },
-  { id: 'manzil', label: 'Manzil', accent: 'indigo', desc: 'Murojaah jauh' }
-];
-
-const KUALITAS_OPTIONS = [
-  { id: 'lancar', label: 'Lancar', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  { id: 'mengulang', label: 'Mengulang', color: 'bg-amber-100 text-amber-800 border-amber-200' },
-  { id: 'terbata', label: 'Terbata-bata', color: 'bg-red-100 text-red-800 border-red-200' }
+  { id: 'ziyadah', label: 'Ziyadah', desc: 'Hafalan Baru', accent: 'emerald' },
+  { id: 'sabqi', label: 'Sabqi', desc: 'Ulang Hafalan Baru', accent: 'amber' },
+  { id: 'manzil', label: 'Manzil', desc: 'Ulang Hafalan Lama', accent: 'indigo' }
 ]
 
+const KUALITAS_OPTIONS = [
+  { id: 'lancar', label: 'Lancar', color: 'text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100' },
+  { id: 'mengulang', label: 'Mengulang', color: 'text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100' },
+  { id: 'terbata', label: 'Terbata', color: 'text-red-700 bg-red-50 border-red-200 hover:bg-red-100' }
+]
+
+const SURAH_LIST = Object.values(surahByNomor).sort((a: any, b: any) => a.nomor - b.nomor)
+
+// === Components ===
 function SectionLabel({ accent, children }: { accent: keyof typeof ACCENTS, children: React.ReactNode }) {
   const a = ACCENTS[accent];
   return (
-    <div className="flex items-center gap-2 mb-4">
-      <span className={`h-1.5 w-1.5 rounded-full ${a.dot}`} />
-      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{children}</p>
+    <div className="flex items-center gap-2 mb-3">
+      <div className={`w-1.5 h-1.5 rounded-full ${a.dot}`} />
+      <span className={`text-[11px] font-bold tracking-widest uppercase ${a.text}`}>{children}</span>
     </div>
   );
 }
@@ -77,25 +84,16 @@ function SectionLabel({ accent, children }: { accent: keyof typeof ACCENTS, chil
 function FieldChip({ label, value, accent }: { label: string, value: string | number, accent: keyof typeof ACCENTS }) {
   const a = ACCENTS[accent];
   return (
-    <div className="flex-1">
-      <p className="text-xs text-slate-500 mb-1">{label}</p>
-      <div className={`rounded-lg ${a.chipBg} ${a.chipText} px-3 py-2.5 font-medium text-sm flex items-center justify-between`}>
-        {value}
-        <span className="text-[9px] font-normal uppercase tracking-wide opacity-60">Otomatis</span>
-      </div>
+    <div className={`flex-1 rounded-lg border ${a.border} ${a.softBg} p-2.5 flex flex-col justify-center`}>
+      <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">{label}</span>
+      <span className={`text-sm font-semibold ${a.chipText} truncate`}>{value}</span>
     </div>
   );
 }
 
 function PreviewBox({ accent, meta, note }: { accent: keyof typeof ACCENTS, meta: any, note?: string }) {
   const a = ACCENTS[accent];
-  if (!meta) {
-    return (
-      <div className="mt-4 rounded-xl border border-dashed border-slate-300 px-4 py-3 text-xs text-slate-500 text-center">
-        Lengkapi input untuk melihat pratinjau surat & ayat.
-      </div>
-    );
-  }
+  if (!meta) return null;
   return (
     <div className={`mt-4 rounded-xl ${a.softBg} border ${a.border} px-4 py-3`}>
       <div className="flex items-start justify-between gap-3">
@@ -104,9 +102,10 @@ function PreviewBox({ accent, meta, note }: { accent: keyof typeof ACCENTS, meta
           <p className={`text-sm font-semibold ${a.text}`}>{meta.label}</p>
         </div>
       </div>
-      {(meta.lintasJuz || note) && (
+      {(meta.lintasJuz || note || meta.presisiManual) && (
         <p className="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-200/50">
           {meta.lintasJuz ? `Lintas juz ${meta.juzMulai} → ${meta.juzSelesai}. ` : ""}
+          {meta.presisiManual ? `(Dikoreksi presisi manual) ` : ""}
           {note}
         </p>
       )}
@@ -127,26 +126,39 @@ function InputSetoranPage() {
   const activeAccent = JENIS_TABS.find(t => t.id === jenisSetoran)?.accent as keyof typeof ACCENTS || 'emerald'
   
   const selectedSantri = useMemo(() => santriList.find(s => s.id === santriId), [santriId, santriList])
+  const urutanHafalan = useMemo(() => selectedSantri?.urutanHafalan ?? urutanJuzStandar(), [selectedSantri])
 
   // Ziyadah State
   const [ayatSelesai, setAyatSelesai] = useState<number | ''>('')
+  const [surahSelesaiNomor, setSurahSelesaiNomor] = useState<number>(0)
   
+  // Setup Hafalan Awal (Santri Baru)
+  const [showSetup, setShowSetup] = useState(false)
+  const [jumlahJuzSelesai, setJumlahJuzSelesai] = useState(0)
+
   // Sabqi / Manzil State
   const [lintasJuz, setLintasJuz] = useState(false)
   
   // -- Standar (Tidak lintas juz)
   const [juz, setJuz] = useState<number>(30)
-  const [halamanAwal, setHalamanAwal] = useState<number>(1)
-  const [halamanAkhir, setHalamanAkhir] = useState<number>(1)
+  const [halamanAwal, setHalamanAwal] = useState<string>('1')
+  const [halamanAkhir, setHalamanAkhir] = useState<string>('1')
   
   // -- Lintas Juz
   const [juzMulai, setJuzMulai] = useState<number>(29)
   const [juzSelesai, setJuzSelesai] = useState<number>(30)
-  const [halMulai, setHalMulai] = useState<number>(1)
-  const [halSelesai, setHalSelesai] = useState<number>(1)
+  const [halMulai, setHalMulai] = useState<string>('1')
+  const [halSelesai, setHalSelesai] = useState<string>('1')
+
+  // Presisi Manual
+  const [showPresisi, setShowPresisi] = useState(false)
+  const [presisiDisentuhManual, setPresisiDisentuhManual] = useState(false)
+  const [overrideAwal, setOverrideAwal] = useState<any>(null)
+  const [overrideAkhir, setOverrideAkhir] = useState<any>(null)
 
   // Hasil Meta Sabqi/Manzil
   const [metaInfo, setMetaInfo] = useState<any>(null)
+  const [parseError, setParseError] = useState<{mulai?: string, selesai?: string}>({})
 
   const [kualitas, setKualitas] = useState<'lancar' | 'mengulang' | 'terbata' | null>(null)
   const [catatan, setCatatan] = useState('')
@@ -176,39 +188,78 @@ function InputSetoranPage() {
     }
 
     try {
+      let awalParsed, akhirParsed;
+      let pErr: any = {};
+      try { awalParsed = parseHalamanPecahan(lintasJuz ? halMulai : halamanAwal); } catch(e: any) { pErr.mulai = e.message; }
+      try { akhirParsed = parseHalamanPecahan(lintasJuz ? halSelesai : halamanAkhir); } catch(e: any) { pErr.selesai = e.message; }
+      
+      setParseError(pErr);
+
+      if (!awalParsed || !akhirParsed) {
+        setMetaInfo(null);
+        return;
+      }
+
+      let metaAuto = null;
       if (!lintasJuz) {
-        // Validasi max halaman
-        const maxHal = getTotalHalamanJuz(juz)
-        const safeHalamanAwal = Math.min(Math.max(1, halamanAwal), maxHal)
-        const safeHalamanAkhir = Math.min(Math.max(1, halamanAkhir), maxHal)
-        
-        if (safeHalamanAwal <= safeHalamanAkhir) {
-          const meta = buatSurahMetaOtomatis(juz, safeHalamanAwal, juz, safeHalamanAkhir)
-          setMetaInfo(meta)
-        } else {
-          setMetaInfo(null)
+        if (awalParsed.halaman <= akhirParsed.halaman) {
+          metaAuto = buatSurahMetaOtomatis(juz, awalParsed.halaman, juz, akhirParsed.halaman)
         }
       } else {
-        // Lintas juz
         if (juzMulai < juzSelesai) {
-          const meta = buatSurahMetaLintasJuz(juzMulai, halMulai, juzSelesai, halSelesai)
-          setMetaInfo(meta)
-        } else {
-          setMetaInfo(null)
+          metaAuto = buatSurahMetaLintasJuz(juzMulai, awalParsed.halaman, juzSelesai, akhirParsed.halaman)
         }
+      }
+      
+      const halamanTidakPenuh = (awalParsed.pecahan > 0) || (akhirParsed.pecahan > 0);
+      
+      if (halamanTidakPenuh && metaAuto && !showPresisi && !presisiDisentuhManual) {
+        setOverrideAwal({ surahNomor: metaAuto.surahMulai.nomor, ayat: metaAuto.surahMulai.ayat })
+        setOverrideAkhir({ surahNomor: metaAuto.surahSelesai.nomor, ayat: metaAuto.surahSelesai.ayat })
+        setShowPresisi(true)
+      }
+
+      if (metaAuto) {
+        setMetaInfo(terapkanOverrideAyat(metaAuto, overrideAwal, overrideAkhir))
+      } else {
+        setMetaInfo(null)
       }
     } catch (e) {
       setMetaInfo(null)
     }
-  }, [jenisSetoran, lintasJuz, juz, halamanAwal, halamanAkhir, juzMulai, juzSelesai, halMulai, halSelesai])
+  }, [jenisSetoran, lintasJuz, juz, halamanAwal, halamanAkhir, juzMulai, juzSelesai, halMulai, halSelesai, overrideAwal, overrideAkhir, showPresisi, presisiDisentuhManual])
 
   // Ziyadah Prefill
   const prefill = useMemo(() => {
     if (jenisSetoran !== 'ziyadah' || !selectedSantri) return null;
-    return prefillZiyadahBerikutnya(selectedSantri.posisiTerakhir)
-  }, [jenisSetoran, selectedSantri])
+    return prefillZiyadahBerikutnya(selectedSantri.posisiTerakhir, urutanHafalan)
+  }, [jenisSetoran, selectedSantri, urutanHafalan])
 
   const prefillSurah = prefill ? surahByNomor[prefill.surahNomor] : null
+
+  // Inisialisasi default Ziyadah suratSelesai
+  useEffect(() => {
+    if (prefill && surahSelesaiNomor === 0) {
+      setSurahSelesaiNomor(prefill.surahNomor);
+      setAyatSelesai(prefill.ayat);
+    }
+  }, [prefill, surahSelesaiNomor])
+
+  const opsiSurahSelesai = useMemo(() => {
+    if (!prefill) return [];
+    return SURAH_LIST.filter((s: any) => s.nomor >= prefill.surahNomor && s.nomor <= prefill.surahNomor + 5);
+  }, [prefill])
+
+  const surahSelesaiObj = surahSelesaiNomor ? surahByNomor[surahSelesaiNomor] : null;
+
+  const ziyadahLabel = useMemo(() => {
+    if (jenisSetoran !== 'ziyadah' || !prefill || !ayatSelesai || !surahSelesaiObj) return null;
+    try {
+      return labelRentangAyatZiyadah(prefill.surahNomor, prefill.ayat, surahSelesaiNomor, Number(ayatSelesai));
+    } catch {
+      return null;
+    }
+  }, [jenisSetoran, prefill, surahSelesaiNomor, ayatSelesai, surahSelesaiObj])
 
   // Handle Submit
   const handleSubmit = async (e: React.FormEvent) => {
@@ -230,15 +281,14 @@ function InputSetoranPage() {
       }
 
       if (jenisSetoran === 'ziyadah') {
-        if (!prefill || !prefillSurah) throw new Error('Data Ziyadah tidak valid')
-        if (ayatSelesai === '' || ayatSelesai < prefill.ayat || ayatSelesai > prefillSurah.totalAyat) {
-          throw new Error('Ayat selesai tidak valid')
-        }
+        if (!prefill || !prefillSurah || !ziyadahLabel) throw new Error('Data Ziyadah tidak valid')
         
         payload.surah = prefillSurah.nama
         payload.surahNomor = prefill.surahNomor
         payload.ayatAwal = prefill.ayat
         payload.ayatAkhir = ayatSelesai
+        // Info untuk lintas surat pada label
+        payload.surahMeta = { label: ziyadahLabel }
       } else {
         if (!metaInfo) throw new Error('Data rentang juz/halaman tidak valid')
         
@@ -246,14 +296,14 @@ function InputSetoranPage() {
            payload.lintasJuz = true
            payload.juzMulai = juzMulai
            payload.juzSelesai = juzSelesai
-           payload.halamanAwal = halMulai
-           payload.halamanAkhir = halSelesai
+           payload.halamanAwal = Number(halMulai.replace(',','.'))
+           payload.halamanAkhir = Number(halSelesai.replace(',','.'))
         } else {
            payload.lintasJuz = false
            payload.juzMulai = juz
            payload.juzSelesai = juz
-           payload.halamanAwal = halamanAwal
-           payload.halamanAkhir = halamanAkhir
+           payload.halamanAwal = Number(halamanAwal.replace(',','.'))
+           payload.halamanAkhir = Number(halamanAkhir.replace(',','.'))
         }
         
         payload.surahMeta = metaInfo
@@ -264,16 +314,17 @@ function InputSetoranPage() {
         setSuccessMsg('Setoran berhasil disimpan!')
         setCatatan('')
         setKualitas(null)
-        setAyatSelesai('')
         
         // Update local santri list state with new posisiTerakhir
-        if (jenisSetoran === 'ziyadah' && payload.surahNomor && payload.ayatAkhir) {
+        if (jenisSetoran === 'ziyadah' && surahSelesaiNomor && ayatSelesai) {
           setSantriList(prev => prev.map(s => {
             if (s.id === santriId) {
-              return { ...s, posisiTerakhir: { surahNomor: payload.surahNomor, ayat: payload.ayatAkhir } }
+              return { ...s, posisiTerakhir: { surahNomor: surahSelesaiNomor, ayat: ayatSelesai } }
             }
             return s
           }))
+          setSurahSelesaiNomor(0)
+          setAyatSelesai('')
         }
         
         setTimeout(() => setSuccessMsg(''), 3000)
@@ -285,6 +336,17 @@ function InputSetoranPage() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleApplySetupAwal = () => {
+    const posisiAwal = posisiTerakhirDariJumlahJuzSelesai(urutanHafalan, jumlahJuzSelesai);
+    setSantriList(prev => prev.map(s => {
+      if (s.id === santriId) {
+        return { ...s, posisiTerakhir: posisiAwal }
+      }
+      return s
+    }))
+    setShowSetup(false)
   }
 
   if (loadingInitial) {
@@ -312,7 +374,10 @@ function InputSetoranPage() {
         <div className="relative">
           <select
             value={santriId}
-            onChange={(e) => setSantriId(e.target.value)}
+            onChange={(e) => {
+              setSantriId(e.target.value)
+              setSurahSelesaiNomor(0)
+            }}
             className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block px-3 py-2.5 pr-8 font-medium"
           >
             {santriList.map((s) => (
@@ -352,7 +417,41 @@ function InputSetoranPage() {
         {/* PANEL ZIYADAH */}
         {jenisSetoran === 'ziyadah' && (
           <div className="bg-white rounded-xl border border-emerald-200 p-5 shadow-sm shadow-emerald-50/50">
-            <SectionLabel accent="emerald">Lanjutan otomatis hafalan</SectionLabel>
+            <div className="flex justify-between items-center mb-4">
+              <SectionLabel accent="emerald">Lanjutan otomatis hafalan</SectionLabel>
+              {!selectedSantri?.posisiTerakhir && (
+                <button
+                  type="button"
+                  onClick={() => setShowSetup(!showSetup)}
+                  className="text-[10px] flex items-center gap-1 font-semibold text-emerald-600 hover:bg-emerald-50 px-2 py-1 rounded-md transition-colors"
+                >
+                  <Settings2 className="w-3 h-3" /> SETUP AWAL
+                </button>
+              )}
+            </div>
+
+            {showSetup && (
+              <div className="mb-5 p-4 rounded-xl border border-emerald-200 bg-emerald-50/50">
+                <p className="text-xs text-emerald-800 font-semibold mb-3">Setup Hafalan Awal Santri</p>
+                <div className="flex gap-3">
+                  <input 
+                    type="number" min={0} max={30}
+                    value={jumlahJuzSelesai} onChange={e => setJumlahJuzSelesai(Number(e.target.value))}
+                    className="w-24 rounded-lg border border-emerald-200 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <div className="flex-1 text-[11px] text-emerald-700 leading-tight flex items-center">
+                    Juz PERTAMA dari urutan hafalannya sudah selesai.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleApplySetupAwal}
+                  className="mt-3 w-full py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold rounded-lg text-xs"
+                >
+                  Terapkan Posisi
+                </button>
+              </div>
+            )}
             
             {!prefill ? (
               <p className="text-sm text-slate-500 bg-emerald-50 p-4 rounded-lg border border-emerald-100">
@@ -361,37 +460,45 @@ function InputSetoranPage() {
             ) : (
               <div className="space-y-4">
                 <div className="flex gap-3">
-                  <FieldChip accent="emerald" label="Surat" value={prefill.namaSurah} />
+                  <FieldChip accent="emerald" label="Surat Mulai" value={prefill.namaSurah} />
                   <FieldChip accent="emerald" label="Ayat Mulai" value={prefill.ayat} />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">Ayat Selesai</label>
-                  <input
-                    type="number"
-                    min={prefill.ayat}
-                    max={prefillSurah?.totalAyat}
-                    value={ayatSelesai}
-                    onChange={(e) => setAyatSelesai(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    placeholder={`Max: ${prefillSurah?.totalAyat}`}
-                  />
-                  <p className="text-[10px] text-slate-400 mt-1.5">
-                    Maksimal ayat untuk {prefillSurah?.nama} adalah {prefillSurah?.totalAyat}.
-                  </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">Surat Selesai</label>
+                    <select
+                      value={surahSelesaiNomor}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setSurahSelesaiNomor(val);
+                        setAyatSelesai(val === prefill.surahNomor ? prefill.ayat : 1);
+                      }}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
+                      {opsiSurahSelesai.map((s: any) => (
+                        <option key={s.nomor} value={s.nomor}>{s.nama}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">Ayat Selesai</label>
+                    <input
+                      type="number"
+                      min={surahSelesaiNomor === prefill.surahNomor ? prefill.ayat : 1}
+                      max={surahSelesaiObj?.totalAyat}
+                      value={ayatSelesai}
+                      onChange={(e) => setAyatSelesai(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      placeholder={`Max: ${surahSelesaiObj?.totalAyat}`}
+                    />
+                  </div>
                 </div>
                 
                 <PreviewBox 
                   accent="emerald"
-                  meta={ayatSelesai !== '' && ayatSelesai >= prefill.ayat && ayatSelesai <= (prefillSurah?.totalAyat||0) ? {
-                    label: ayatSelesai === prefill.ayat 
-                      ? `${prefill.namaSurah} ayat ${prefill.ayat}` 
-                      : `${prefill.namaSurah} ayat ${prefill.ayat}-${ayatSelesai}`
-                  } : null}
-                  note={
-                    ayatSelesai !== '' && ayatSelesai >= prefill.ayat && ayatSelesai <= (prefillSurah?.totalAyat||0) 
-                    ? `Setoran berikutnya akan otomatis dimulai dari ayat setelahnya.` : undefined
-                  }
+                  meta={ziyadahLabel ? { label: ziyadahLabel } : null}
+                  note={ziyadahLabel ? `Setoran berikutnya akan otomatis dihitung dari posisi ini.` : undefined}
                 />
               </div>
             )}
@@ -425,8 +532,8 @@ function InputSetoranPage() {
                     onChange={(e) => {
                       const newJuz = Number(e.target.value)
                       setJuz(newJuz)
-                      setHalamanAwal(1)
-                      setHalamanAkhir(1)
+                      setHalamanAwal('1')
+                      setHalamanAkhir('1')
                     }}
                     className={`w-full appearance-none rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm pr-8 focus:outline-none focus:ring-2 ${ACCENTS[activeAccent].ring}`}
                   >
@@ -440,18 +547,22 @@ function InputSetoranPage() {
                   <div className="flex-1">
                     <label className="block text-xs text-slate-500 mb-1.5">Hal. Mulai</label>
                     <input 
-                      type="number" step="0.25" min={1} max={getTotalHalamanJuz(juz)}
-                      value={halamanAwal} onChange={e => setHalamanAwal(Number(e.target.value))}
-                      className={`w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${ACCENTS[activeAccent].ring}`}
+                      type="text" inputMode="decimal"
+                      value={halamanAwal} onChange={e => setHalamanAwal(e.target.value)}
+                      placeholder="mis. 1,5"
+                      className={`w-full rounded-lg border ${parseError.mulai ? 'border-red-400' : 'border-slate-300'} px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${ACCENTS[activeAccent].ring}`}
                     />
+                    {parseError.mulai && <p className="text-[10px] text-red-500 mt-1">{parseError.mulai}</p>}
                   </div>
                   <div className="flex-1">
                     <label className="block text-xs text-slate-500 mb-1.5">Hal. Selesai</label>
                     <input 
-                      type="number" step="0.25" min={halamanAwal} max={getTotalHalamanJuz(juz)}
-                      value={halamanAkhir} onChange={e => setHalamanAkhir(Number(e.target.value))}
-                      className={`w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${ACCENTS[activeAccent].ring}`}
+                      type="text" inputMode="decimal"
+                      value={halamanAkhir} onChange={e => setHalamanAkhir(e.target.value)}
+                      placeholder="mis. 2,5"
+                      className={`w-full rounded-lg border ${parseError.selesai ? 'border-red-400' : 'border-slate-300'} px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${ACCENTS[activeAccent].ring}`}
                     />
+                    {parseError.selesai && <p className="text-[10px] text-red-500 mt-1">{parseError.selesai}</p>}
                   </div>
                 </div>
               </div>
@@ -466,7 +577,7 @@ function InputSetoranPage() {
                       value={juzMulai}
                       onChange={(e) => {
                         setJuzMulai(Number(e.target.value))
-                        setHalMulai(1)
+                        setHalMulai('1')
                       }}
                       className={`w-full appearance-none rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm pr-6 focus:outline-none focus:ring-2 ${ACCENTS[activeAccent].ring}`}
                     >
@@ -477,11 +588,12 @@ function InputSetoranPage() {
                   </div>
                   <div>
                     <input 
-                      type="number" step="0.25" min={1} max={getTotalHalamanJuz(juzMulai)}
-                      value={halMulai} onChange={e => setHalMulai(Number(e.target.value))}
-                      placeholder="Hal"
-                      className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 ${ACCENTS[activeAccent].ring}`}
+                      type="text" inputMode="decimal"
+                      value={halMulai} onChange={e => setHalMulai(e.target.value)}
+                      placeholder="mis. 1,5"
+                      className={`w-full rounded-lg border ${parseError.mulai ? 'border-red-400' : 'border-slate-300'} px-3 py-2 text-sm focus:outline-none focus:ring-2 ${ACCENTS[activeAccent].ring}`}
                     />
+                    {parseError.mulai && <p className="text-[10px] text-red-500 mt-1 leading-tight">{parseError.mulai}</p>}
                   </div>
                 </div>
 
@@ -494,7 +606,7 @@ function InputSetoranPage() {
                       value={juzSelesai}
                       onChange={(e) => {
                         setJuzSelesai(Number(e.target.value))
-                        setHalSelesai(1)
+                        setHalSelesai('1')
                       }}
                       className={`w-full appearance-none rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm pr-6 focus:outline-none focus:ring-2 ${ACCENTS[activeAccent].ring}`}
                     >
@@ -505,14 +617,86 @@ function InputSetoranPage() {
                   </div>
                   <div>
                     <input 
-                      type="number" step="0.25" min={1} max={getTotalHalamanJuz(juzSelesai)}
-                      value={halSelesai} onChange={e => setHalSelesai(Number(e.target.value))}
-                      placeholder="Hal"
-                      className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 ${ACCENTS[activeAccent].ring}`}
+                      type="text" inputMode="decimal"
+                      value={halSelesai} onChange={e => setHalSelesai(e.target.value)}
+                      placeholder="mis. 2,5"
+                      className={`w-full rounded-lg border ${parseError.selesai ? 'border-red-400' : 'border-slate-300'} px-3 py-2 text-sm focus:outline-none focus:ring-2 ${ACCENTS[activeAccent].ring}`}
                     />
+                    {parseError.selesai && <p className="text-[10px] text-red-500 mt-1 leading-tight">{parseError.selesai}</p>}
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Presisi Ayat (Otomatis Terbuka jika ada Pecahan) */}
+            {showPresisi && (
+              <div className={`mt-4 p-4 rounded-xl border ${ACCENTS[activeAccent].border} ${ACCENTS[activeAccent].softBg}`}>
+                 <div className="flex justify-between items-center mb-3">
+                   <p className={`text-xs font-bold uppercase tracking-wider ${ACCENTS[activeAccent].text}`}>Koreksi Ayat Manual</p>
+                   <button 
+                     type="button"
+                     onClick={() => {
+                       setShowPresisi(false)
+                       setOverrideAwal(null)
+                       setOverrideAkhir(null)
+                       setPresisiDisentuhManual(true)
+                     }}
+                     className="text-[10px] font-semibold text-slate-500 hover:text-slate-700"
+                   >
+                     TUTUP
+                   </button>
+                 </div>
+                 
+                 <div className="grid grid-cols-2 gap-3">
+                   <div>
+                     <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Mulai Presisi</label>
+                     <select 
+                       value={overrideAwal?.surahNomor || ''} 
+                       onChange={e => setOverrideAwal({...overrideAwal, surahNomor: Number(e.target.value)})}
+                       className="w-full mb-2 rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:ring-2 focus:ring-slate-400"
+                     >
+                       {SURAH_LIST.map((s: any) => <option key={s.nomor} value={s.nomor}>{s.nama}</option>)}
+                     </select>
+                     <input 
+                       type="number" min={1} placeholder="Ayat Awal"
+                       value={overrideAwal?.ayat || ''}
+                       onChange={e => setOverrideAwal({...overrideAwal, ayat: Number(e.target.value)})}
+                       className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:ring-2 focus:ring-slate-400"
+                     />
+                   </div>
+                   <div>
+                     <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Selesai Presisi</label>
+                     <select 
+                       value={overrideAkhir?.surahNomor || ''} 
+                       onChange={e => setOverrideAkhir({...overrideAkhir, surahNomor: Number(e.target.value)})}
+                       className="w-full mb-2 rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:ring-2 focus:ring-slate-400"
+                     >
+                       {SURAH_LIST.map((s: any) => <option key={s.nomor} value={s.nomor}>{s.nama}</option>)}
+                     </select>
+                     <input 
+                       type="number" min={1} placeholder="Ayat Akhir"
+                       value={overrideAkhir?.ayat || ''}
+                       onChange={e => setOverrideAkhir({...overrideAkhir, ayat: Number(e.target.value)})}
+                       className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:ring-2 focus:ring-slate-400"
+                     />
+                   </div>
+                 </div>
+              </div>
+            )}
+            
+            {(!showPresisi && metaInfo) && (
+              <button 
+                type="button" 
+                onClick={() => {
+                   setShowPresisi(true)
+                   setPresisiDisentuhManual(true)
+                   setOverrideAwal({ surahNomor: metaInfo.surahMulai.nomor, ayat: metaInfo.surahMulai.ayat })
+                   setOverrideAkhir({ surahNomor: metaInfo.surahSelesai.nomor, ayat: metaInfo.surahSelesai.ayat })
+                }}
+                className="mt-3 text-[10px] font-bold text-slate-400 hover:text-slate-600 underline"
+              >
+                + KOREKSI PRESISI AYAT MANUAL
+              </button>
             )}
 
             <PreviewBox accent={activeAccent} meta={metaInfo} />

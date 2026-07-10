@@ -2,8 +2,8 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { inputMurojaah } from '../../server-fns/santri-functions'
 import { Button } from '../../components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card'
-import { ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { Card, CardContent } from '../../components/ui/card'
+import { ArrowLeft } from 'lucide-react'
 import { getMaksimalHalamanRelatif, buatSurahMeta } from '../../lib/quranMapper'
 
 export const Route = createFileRoute('/santri/input')({
