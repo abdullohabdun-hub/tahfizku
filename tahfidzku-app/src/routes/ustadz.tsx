@@ -52,7 +52,7 @@ function UstadzLayout() {
           <div className="bg-emerald-600 p-1.5 rounded-md">
             <BookOpen className="h-4 w-4 text-white" />
           </div>
-          <span className="font-bold text-base text-emerald-950 tracking-tight">TahfidzKu Ustadz</span>
+          <span className="font-bold text-base text-emerald-950 tracking-tight">{tenantName} Ustadz</span>
         </div>
         <div className="flex gap-3 items-center">
           <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold border border-emerald-200 uppercase text-xs md:text-sm">
@@ -98,7 +98,7 @@ function UstadzLayout() {
           <div className="bg-emerald-600 p-1.5 rounded-md">
             <BookOpen className="h-5 w-5 text-white" />
           </div>
-          <span className="font-bold text-xl tracking-tight text-emerald-950">TahfidzKu</span>
+          <span className="font-bold text-xl tracking-tight text-emerald-950 truncate" title={tenantName}>{tenantName}</span>
         </div>
         <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
           {navItems.map((item) => {
