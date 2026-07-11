@@ -92,8 +92,8 @@ export const createSantri = createServerFn({ method: 'POST' })
         ? getAyatTerakhirJuz(data.juzProgress[data.juzProgress.length - 1]) 
         : null
 
-      const result = await db.transaction(async (tx) => {
-        const [newSantri] = await tx.insert(santri).values({
+      const result = await (async () => {
+        const [newSantri] = await db.insert(santri).values({
           tenantId,
           nama: data.nama,
           targetJuz: data.targetJuz,
@@ -111,10 +111,10 @@ export const createSantri = createServerFn({ method: 'POST' })
           if (!data.username || !data.password) {
             throw new ValidationError('Username dan Password wajib diisi untuk Santri Dewasa')
           }
-          const existing = await tx.select({ id: users.id }).from(users).where(eq(users.email, data.username))
+          const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, data.username))
           if (existing.length > 0) throw new ValidationError('Username/Email/No WA sudah terdaftar')
           
-          await tx.insert(users).values({
+          await db.insert(users).values({
             tenantId,
             nama: data.nama,
             email: data.username,
@@ -124,7 +124,7 @@ export const createSantri = createServerFn({ method: 'POST' })
           })
         }
         return newSantri
-      })
+      })();
 
       return success(result, 'Berhasil menambahkan Santri')
     } catch (err) {
@@ -157,9 +157,9 @@ export const updateSantri = createServerFn({ method: 'POST' })
 
       const tenantId = session.user.tenantId
 
-      await db.transaction(async (tx) => {
+      await (async () => {
         // Ambil data santri saat ini untuk memeriksa apakah perlu update posisiTerakhir
-        const [currentSantri] = await tx.select().from(santri).where(eq(santri.id, data.id)).limit(1)
+        const [currentSantri] = await db.select().from(santri).where(eq(santri.id, data.id)).limit(1)
         
         let newPosisiTerakhir = currentSantri?.posisiTerakhir
         let newUrutanHafalan = currentSantri?.urutanHafalan || bangunUrutanHafalan(data.juzProgress)
@@ -178,7 +178,7 @@ export const updateSantri = createServerFn({ method: 'POST' })
           }
         }
 
-        await tx.update(santri).set({
+        await db.update(santri).set({
           nama: data.nama,
           targetJuz: data.targetJuz,
           juzProgress: data.juzProgress,
@@ -194,10 +194,10 @@ export const updateSantri = createServerFn({ method: 'POST' })
         if (data.tipe === 'dewasa') {
           if (!data.username) throw new ValidationError('Username wajib diisi untuk Santri Dewasa')
           
-          const existing = await tx.select({ id: users.id }).from(users).where(eq(users.email, data.username))
+          const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, data.username))
           const existingUser = existing.find(u => u.id)
           
-          const userForSantri = await tx.select({ id: users.id }).from(users).where(eq(users.santriId, data.id))
+          const userForSantri = await db.select({ id: users.id }).from(users).where(eq(users.santriId, data.id))
 
           if (userForSantri.length > 0) {
             if (existingUser && existingUser.id !== userForSantri[0].id) {
@@ -205,11 +205,11 @@ export const updateSantri = createServerFn({ method: 'POST' })
             }
             const updateData: any = { nama: data.nama, email: data.username }
             if (data.password) updateData.passwordHash = data.password
-            await tx.update(users).set(updateData).where(eq(users.id, userForSantri[0].id))
+            await db.update(users).set(updateData).where(eq(users.id, userForSantri[0].id))
           } else {
             if (!data.password) throw new ValidationError('Password wajib diisi untuk akun baru')
             if (existingUser) throw new ValidationError('Username sudah terdaftar')
-            await tx.insert(users).values({
+            await db.insert(users).values({
               tenantId,
               nama: data.nama,
               email: data.username,
@@ -219,7 +219,7 @@ export const updateSantri = createServerFn({ method: 'POST' })
             })
           }
         }
-      })
+      })();
 
       return success(null, 'Berhasil memperbarui Santri')
     } catch (err) {
@@ -260,10 +260,10 @@ export const updateSantriProfile = createServerFn({ method: 'POST' })
 
       if (!session.user.santriId) throw new Error('Profil santri tidak ditemukan')
 
-      await db.transaction(async (tx) => {
-        await tx.update(santri).set({ nama: data.nama }).where(eq(santri.id, session.user.santriId!))
-        await tx.update(users).set({ nama: data.nama }).where(eq(users.id, session.user.id))
-      })
+      await (async () => {
+        await db.update(santri).set({ nama: data.nama }).where(eq(santri.id, session.user.santriId!))
+        await db.update(users).set({ nama: data.nama }).where(eq(users.id, session.user.id))
+      })();
 
       return success(null, 'Profil berhasil diperbarui')
     } catch (err) {

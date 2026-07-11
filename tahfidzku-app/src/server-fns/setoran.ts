@@ -22,10 +22,10 @@ export const createSetoran = createServerFn({ method: 'POST' })
 
       const tenantId = session.user.tenantId
 
-      // Drizzle Transaction: Menjamin data setoran dan update posisiTerakhir atomic
-      const result = await db.transaction(async (tx) => {
+      // Workaround: neon-http tidak mendukung transaction
+      const result = await (async () => {
         // 1. Insert setoran
-        const [newSetoran] = await tx
+        const [newSetoran] = await db
           .insert(setoran)
           .values({
             tenantId,
@@ -49,7 +49,7 @@ export const createSetoran = createServerFn({ method: 'POST' })
 
         // 2. Update tracker posisiTerakhir jika Ziyadah
         if (data.jenis === 'ziyadah' && data.surahNomor && data.ayatAkhir) {
-          const currentSantri = await tx.select({ juzProgress: santri.juzProgress }).from(santri).where(eq(santri.id, data.santriId)).limit(1)
+          const currentSantri = await db.select({ juzProgress: santri.juzProgress }).from(santri).where(eq(santri.id, data.santriId)).limit(1)
           let newJuzProgress = currentSantri[0]?.juzProgress || []
 
           const juzSekarang = cariJuzUntukAyat(data.surahNomor, data.ayatAkhir)
@@ -61,7 +61,7 @@ export const createSetoran = createServerFn({ method: 'POST' })
              }
           }
 
-          await tx
+          await db
             .update(santri)
             .set({ 
               posisiTerakhir: { surahNomor: data.surahNomor, ayat: data.ayatAkhir },
@@ -71,7 +71,7 @@ export const createSetoran = createServerFn({ method: 'POST' })
         }
 
         return newSetoran
-      })
+      })();
 
       return success(result, 'Setoran berhasil disimpan')
     } catch (err) {
