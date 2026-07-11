@@ -55,11 +55,14 @@ function DataSantriPage() {
 
   useEffect(() => {
     if (batasHafalanJuz !== '') {
-      const surahs = getSurahByJuz(Number(batasHafalanJuz))
+      const juzNum = Number(batasHafalanJuz)
+      const surahs = getSurahByJuz(juzNum)
       setSurahOptions(surahs)
       if (!surahs.find(s => s.nama === batasHafalanSurah)) {
         setBatasHafalanSurah(surahs[0]?.nama || '')
       }
+      // Auto-uncheck Mutqin
+      setJuzProgress(prev => prev.includes(juzNum) ? prev.filter(j => j !== juzNum) : prev)
     } else {
       setSurahOptions([])
       setBatasHafalanSurah('')
@@ -81,6 +84,10 @@ function DataSantriPage() {
   }, [batasHafalanSurah, batasHafalanJuz, surahOptions])
 
   const toggleJuz = (j: number) => {
+    if (j === Number(batasHafalanJuz)) {
+      alert(`Juz ${j} sedang diisi pada "Batas Hafalan Saat Ini". Kosongkan Batas Hafalan terlebih dahulu jika ingin menandai juz ini sudah mutqin penuh.`)
+      return
+    }
     setJuzProgress(prev => 
       prev.includes(j) ? prev.filter(x => x !== j) : [...prev, j]
     )
