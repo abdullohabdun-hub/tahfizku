@@ -162,6 +162,42 @@ export const getSantriDashboardData = createServerFn({ method: 'GET' }).handler(
         progressPercentage = Math.round((juzSelesai / targetJuz) * 100)
       }
 
+      // Murojaah 7 Hari Terakhir
+      const last7Days = new Date();
+      last7Days.setDate(last7Days.getDate() - 6);
+      last7Days.setHours(0,0,0,0);
+      
+      const setoran7Hari = await db.query.setoran.findMany({
+        where: and(
+          eq(setoran.santriId, santriId),
+          gte(setoran.createdAt, last7Days)
+        )
+      })
+      
+      const murojaahChart = Array(7).fill(0).map((_, i) => {
+        const d = new Date(last7Days);
+        d.setDate(d.getDate() + i);
+        return { 
+          name: d.toLocaleDateString('id-ID', { weekday: 'short' }), 
+          date: d.toISOString().split('T')[0],
+          halaman: 0 
+        };
+      });
+
+      for (const s of setoran7Hari) {
+        if (s.jenis === 'sabqi' || s.jenis === 'manzil') {
+          const sDate = new Date(s.createdAt).toISOString().split('T')[0];
+          const dayIdx = murojaahChart.findIndex(d => d.date === sDate);
+          if (dayIdx !== -1) {
+            let pages = 0;
+            if (s.halamanAwal != null && s.halamanAkhir != null) {
+              pages = Math.max(0, s.halamanAkhir - s.halamanAwal + 1); // estimasi kasar halaman
+            }
+            murojaahChart[dayIdx].halaman += pages;
+          }
+        }
+      }
+
       return success({
         profil,
         riwayat,
@@ -170,6 +206,7 @@ export const getSantriDashboardData = createServerFn({ method: 'GET' }).handler(
           juzSelesai,
           percentage: progressPercentage,
         },
+        murojaahChart,
         streak: 5,
       }, "Data dashboard berhasil diambil")
     } catch (err) {

@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { getSantriDashboardData } from '../../server-fns/dashboard'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Flame, Target, BookOpen, Clock } from 'lucide-react'
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, CartesianGrid } from 'recharts'
 import { Link } from '@tanstack/react-router'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
@@ -28,6 +28,8 @@ function SantriDashboard() {
     { name: 'Sisa', value: (progress?.targetJuz || 30) - (progress?.juzSelesai || 0) }
   ]
   const COLORS = ['#10b981', '#f1f5f9'] // Emerald for done, slate for remaining
+  
+  const murojaahChart = data?.murojaahChart || []
 
   return (
     <div className="space-y-6 pb-6">
@@ -98,6 +100,37 @@ function SantriDashboard() {
                 </div>
               </div>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Grafik Murojaah */}
+      <Card className="rounded-2xl shadow-sm border-slate-200">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-800">
+            <BookOpen className="w-4 h-4 text-emerald-600" /> Aktivitas Murojaah
+          </CardTitle>
+          <p className="text-xs text-slate-500 font-medium">Halaman yang dibaca dalam 7 hari terakhir</p>
+        </CardHeader>
+        <CardContent>
+          <div className="h-48 w-full mt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={murojaahChart}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 10, fill: '#64748b' }}
+                  dy={10}
+                />
+                <Tooltip 
+                  cursor={{ fill: '#f1f5f9' }}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Bar dataKey="halaman" fill="#10b981" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>

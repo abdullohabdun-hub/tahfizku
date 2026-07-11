@@ -49,6 +49,8 @@ export const getSantriList = createServerFn({ method: 'GET' }).handler(
         tipe: s.tipe,
         username: s.akun && s.akun.length > 0 ? s.akun[0].email : null,
         createdAt: s.createdAt,
+        posisiTerakhir: s.posisiTerakhir,
+        urutanHafalan: s.urutanHafalan,
       }))
 
       return success(mapped, 'Berhasil mengambil daftar santri')
