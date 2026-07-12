@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, Link, useLocation, useRouter } from "@tanstack/react-router"
 import { Home, PencilLine, User, Award, BookOpen, LogOut } from "lucide-react"
-import { logout } from "../server-fns/auth"
+import { useState, useEffect } from "react"
+import { checkAuth, logout } from "../server-fns/auth"
 
 export const Route = createFileRoute('/santri')({
   component: SantriLayout,
@@ -9,6 +10,17 @@ export const Route = createFileRoute('/santri')({
 function SantriLayout() {
   const location = useLocation()
   const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    async function loadProfile() {
+      const auth = await checkAuth()
+      if (auth) {
+        setUser(auth)
+      }
+    }
+    loadProfile()
+  }, [])
 
   const handleLogout = async () => {
     await logout()
@@ -20,7 +32,6 @@ function SantriLayout() {
     { name: "Beranda", path: "/santri", icon: <Home className="w-5 h-5" /> },
     { name: "Lapor", path: "/santri/input", icon: <PencilLine className="w-5 h-5" /> },
     { name: "Ujian", path: "/santri/ujian", icon: <Award className="w-5 h-5" /> },
-    { name: "Profil", path: "/santri/profil", icon: <User className="w-5 h-5" /> },
   ]
 
   return (
@@ -34,9 +45,14 @@ function SantriLayout() {
           </div>
           <span className="font-bold text-base text-emerald-950 tracking-tight">TahfidzKu Santri</span>
         </div>
-        <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors md:hidden">
-          <LogOut className="w-4 h-4" />
-        </button>
+        <div className="flex gap-3 items-center">
+          <Link to="/santri/profil" className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold border border-emerald-200 uppercase text-xs md:text-sm hover:ring-2 hover:ring-emerald-500 hover:bg-emerald-200 transition-all cursor-pointer">
+            {user?.nama ? user.nama.substring(0, 2) : "SA"}
+          </Link>
+          <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors md:hidden">
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
       </header>
 
       {/* Main Content */}

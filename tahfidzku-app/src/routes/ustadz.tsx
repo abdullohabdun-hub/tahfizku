@@ -40,7 +40,6 @@ function UstadzLayout() {
     { name: "Pantau", path: "/ustadz/pantau", icon: <Clock className="w-5 h-5" /> },
     { name: "Ujian", path: "/ustadz/ujian", icon: <Award className="w-5 h-5" /> },
     { name: "Riwayat", path: "/ustadz/riwayat", icon: <History className="w-5 h-5" /> },
-    { name: "Profil", path: "/ustadz/profil", icon: <User className="w-5 h-5" /> },
   ]
 
   return (
@@ -55,9 +54,9 @@ function UstadzLayout() {
           <span className="font-bold text-base text-emerald-950 tracking-tight">{tenantName} Ustadz</span>
         </div>
         <div className="flex gap-3 items-center">
-          <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold border border-emerald-200 uppercase text-xs md:text-sm">
+          <Link to="/ustadz/profil" className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold border border-emerald-200 uppercase text-xs md:text-sm hover:ring-2 hover:ring-emerald-500 hover:bg-emerald-200 transition-all cursor-pointer">
             {user?.nama ? user.nama.substring(0, 2) : "US"}
-          </div>
+          </Link>
           <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors md:hidden">
             <LogOut className="w-4 h-4" />
           </button>
