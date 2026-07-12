@@ -5,7 +5,9 @@ export type SessionUser = {
   id: string
   tenantId: string
   nama: string
-  email: string
+  email: string | null
+  username: string | null
+  noWa: string | null
   role: Role
   santriId?: string | null
 }

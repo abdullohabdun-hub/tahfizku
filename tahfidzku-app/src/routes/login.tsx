@@ -12,7 +12,7 @@ export const Route = createFileRoute('/login')({
 
 function LoginPage() {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -25,7 +25,7 @@ function LoginPage() {
     try {
       const result = await login({
         data: {
-          email,
+          identifier,
           password,
         },
       })
@@ -60,7 +60,7 @@ function LoginPage() {
             Masuk ke TahfidzKu
           </CardTitle>
           <CardDescription className="text-gray-500 text-sm">
-            Masukkan Nomor WhatsApp/Email dan PIN Anda
+            Masukkan Username / No WA / Email dan PIN Anda
           </CardDescription>
         </CardHeader>
         
@@ -73,13 +73,13 @@ function LoginPage() {
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-700 font-medium">No. WhatsApp / Email</Label>
+              <Label htmlFor="identifier" className="text-gray-700 font-medium">Username / No WA / Email</Label>
               <Input
-                id="email"
+                id="identifier"
                 type="text"
-                placeholder="Misal: 08123456789 atau ustadz@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Misal: 08123456789 atau ustadz_123"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 className="h-12 border-gray-200 focus-visible:ring-emerald-500 rounded-xl"
                 required
               />

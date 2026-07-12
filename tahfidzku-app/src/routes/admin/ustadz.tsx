@@ -16,7 +16,9 @@ function DataUstadzPage() {
   // Form State
   const [editingId, setEditingId] = useState<string | null>(null)
   const [nama, setNama] = useState('')
+  const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
+  const [noWa, setNoWa] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -39,9 +41,9 @@ function DataUstadzPage() {
     
     let res;
     if (editingId) {
-      res = await updateUstadz({ data: { id: editingId, nama, email, password: password || undefined } })
+      res = await updateUstadz({ data: { id: editingId, nama, username, email: email || undefined, noWa: noWa || undefined, password: password || undefined } })
     } else {
-      res = await createUstadz({ data: { nama, email, password } })
+      res = await createUstadz({ data: { nama, username, email: email || undefined, noWa: noWa || undefined, password } })
     }
 
     if (res.success) {
@@ -57,7 +59,9 @@ function DataUstadzPage() {
   const handleEdit = (u: any) => {
     setEditingId(u.id)
     setNama(u.nama)
-    setEmail(u.email)
+    setUsername(u.username || '')
+    setEmail(u.email || '')
+    setNoWa(u.noWa || '')
     setPassword('') // Optional when editing
     setShowForm(true)
   }
@@ -66,7 +70,9 @@ function DataUstadzPage() {
     setShowForm(false)
     setEditingId(null)
     setNama('')
+    setUsername('')
     setEmail('')
+    setNoWa('')
     setPassword('')
   }
 
@@ -98,12 +104,20 @@ function DataUstadzPage() {
           <h3 className="font-semibold text-lg mb-4">{editingId ? 'Edit Ustadz' : 'Form Tambah Ustadz'}</h3>
           <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
             <div>
-              <label className="block text-sm font-medium mb-1">Nama Lengkap</label>
+              <label className="block text-sm font-medium mb-1">Nama Lengkap *</label>
               <input required value={nama} onChange={e => setNama(e.target.value)} className="w-full border p-2 rounded-lg" placeholder="Ustadz Fulan" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Username / Email / No HP</label>
-              <input required value={email} onChange={e => setEmail(e.target.value)} className="w-full border p-2 rounded-lg" placeholder="user_ustadz" />
+              <label className="block text-sm font-medium mb-1">Username *</label>
+              <input required value={username} onChange={e => setUsername(e.target.value)} className="w-full border p-2 rounded-lg" placeholder="username_ustadz" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Email (Opsional)</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full border p-2 rounded-lg" placeholder="email@contoh.com" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">No. WhatsApp (Opsional)</label>
+              <input value={noWa} onChange={e => setNoWa(e.target.value)} className="w-full border p-2 rounded-lg" placeholder="Misal: 0812345678" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">PIN / Password Login</label>
@@ -128,7 +142,8 @@ function DataUstadzPage() {
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="p-4 font-semibold text-slate-600">Nama Ustadz</th>
-                <th className="p-4 font-semibold text-slate-600">Username/Email</th>
+                <th className="p-4 font-semibold text-slate-600">Username</th>
+                <th className="p-4 font-semibold text-slate-600">Kontak</th>
                 <th className="p-4 font-semibold text-slate-600">Tanggal Gabung</th>
                 <th className="p-4 font-semibold text-slate-600 text-right">Aksi</th>
               </tr>
@@ -136,7 +151,7 @@ function DataUstadzPage() {
             <tbody>
               {ustadz.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="p-4 text-center text-slate-500">Belum ada data ustadz</td>
+                  <td colSpan={5} className="p-4 text-center text-slate-500">Belum ada data ustadz</td>
                 </tr>
               ) : (
                 ustadz.map(u => (
@@ -147,7 +162,11 @@ function DataUstadzPage() {
                       </div>
                       {u.nama}
                     </td>
-                    <td className="p-4 text-slate-600 font-mono text-sm">{u.email}</td>
+                    <td className="p-4 text-slate-600 font-mono text-sm">{u.username || '-'}</td>
+                    <td className="p-4 text-slate-600 text-xs">
+                      <div>{u.email || '-'}</div>
+                      <div className="text-slate-400">{u.noWa || '-'}</div>
+                    </td>
                     <td className="p-4 text-slate-500 text-sm">
                       {new Date(u.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </td>
@@ -169,3 +188,4 @@ function DataUstadzPage() {
     </div>
   )
 }
+

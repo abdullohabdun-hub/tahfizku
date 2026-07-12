@@ -29,7 +29,8 @@ function DataSantriPage() {
 
   const [kelasId, setKelasId] = useState('')
   const [tipe, setTipe] = useState<'reguler' | 'dewasa'>('dewasa')
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
+  const [noWa, setNoWa] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -107,7 +108,8 @@ function DataSantriPage() {
         batasHafalanAyat: batasHafalanAyat !== '' ? Number(batasHafalanAyat) : undefined,
         kelasId: kelasId ? kelasId : undefined,
         tipe,
-        username: tipe === 'dewasa' ? username : undefined,
+        email: tipe === 'dewasa' ? (email || undefined) : undefined,
+        noWa: tipe === 'dewasa' ? (noWa || undefined) : undefined,
         password: tipe === 'dewasa' ? password : undefined
       } 
     }
@@ -145,7 +147,8 @@ function DataSantriPage() {
     
     setKelasId(s.kelasId || '')
     setTipe(s.tipe || 'dewasa')
-    setUsername(s.username || '')
+    setEmail(s.email || '')
+    setNoWa(s.noWa || '')
     setPassword('') // Optional when editing
     setShowForm(true)
   }
@@ -161,7 +164,8 @@ function DataSantriPage() {
     setBatasHafalanAyat('')
     setKelasId('')
     setTipe('dewasa')
-    setUsername('')
+    setEmail('')
+    setNoWa('')
     setPassword('')
   }
 
@@ -280,9 +284,16 @@ function DataSantriPage() {
 
             {tipe === 'dewasa' && (
               <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-4">
+                <div className="text-sm font-medium text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
+                  ⚠️ Santri Dewasa wajib mengisi minimal salah satu identitas (Email atau No. WA) untuk login.
+                </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Username / Email / No WA <span className="text-red-500">*</span></label>
-                  <input required={tipe === 'dewasa'} value={username} onChange={e => setUsername(e.target.value)} className="w-full border p-2 rounded-lg bg-white" placeholder="Cth: fulan@gmail.com atau 081234567" />
+                  <label className="block text-sm font-medium mb-1">Email (Opsional)</label>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full border p-2 rounded-lg bg-white" placeholder="Cth: fulan@gmail.com" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">No WhatsApp (Opsional)</label>
+                  <input value={noWa} onChange={e => setNoWa(e.target.value)} className="w-full border p-2 rounded-lg bg-white" placeholder="Cth: 081234567" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Password Login {editingId && <span className="text-slate-500 font-normal">(Kosongkan jika tidak diubah)</span>}</label>
@@ -374,10 +385,10 @@ function DataSantriPage() {
                         ? (
                           <div>
                             <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-xs font-medium">Dewasa / Online</span>
-                            {s.username && (
-                              <div className="mt-2 text-[10px] text-slate-500 font-mono bg-slate-50 p-1.5 rounded border border-slate-200 w-max leading-tight">
-                                U: {s.username}<br/>
-                                P: 123456
+                            {(s.email || s.noWa) && (
+                              <div className="mt-2 text-[10px] text-slate-500 font-mono bg-slate-50 p-1.5 rounded border border-slate-200 w-max leading-tight space-y-1">
+                                {s.email && <div>E: {s.email}</div>}
+                                {s.noWa && <div>W: {s.noWa}</div>}
                               </div>
                             )}
                           </div>

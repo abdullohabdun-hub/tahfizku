@@ -107,7 +107,7 @@ export type CreateLaporanInput = z.infer<typeof createLaporanSchema>
 
 // ── Auth ─────────────────────────────────────────────
 export const loginSchema = z.object({
-  email: z.string().min(1, 'Username / No WA / Email wajib diisi'),
+  identifier: z.string().min(1, 'Username / No WA / Email wajib diisi'),
   password: z.string().min(4, 'PIN/Password minimal 4 karakter'),
 })
 

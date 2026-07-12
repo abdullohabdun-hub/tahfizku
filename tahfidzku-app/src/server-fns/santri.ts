@@ -1,12 +1,12 @@
 import { createServerFn } from '@tanstack/react-start'
-import { eq, and, desc } from 'drizzle-orm'
+import { eq, and, desc, or } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '../db'
 import { santri, users } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError, ValidationError } from '../lib/errors'
-import { bangunUrutanHafalan, getAyatTerakhirJuz, bangunPosisiDariAdminInput } from '../lib/quranMapper'
+import { bangunUrutanHafalan, bangunPosisiDariAdminInput } from '../lib/quranMapper'
 
 // ==========================================
 // 1. GET SANTRI LIST (ADMIN & USTADZ)
@@ -29,13 +29,10 @@ export const getSantriList = createServerFn({ method: 'GET' }).handler(
         orderBy: [desc(santri.createdAt)],
         with: {
           kelas: { columns: { nama: true } },
-          akun: { columns: { email: true } }
+          akun: { columns: { email: true, noWa: true } }
         }
       })
 
-      // Jika role = ustadz, kita mungkin mau filter by ustadzId, tapi untuk sekarang samakan dgn logika sebelumnya yg mengambil semua se-tenant
-      // Tapi kita biarkan saja sesuai awal: mengambil semua santri dari tenant.
-      
       const mapped = results.map(s => ({
         id: s.id,
         nama: s.nama,
@@ -47,7 +44,8 @@ export const getSantriList = createServerFn({ method: 'GET' }).handler(
         batasHafalanSurah: s.batasHafalanSurah,
         batasHafalanAyat: s.batasHafalanAyat,
         tipe: s.tipe,
-        username: s.akun && s.akun.length > 0 ? s.akun[0].email : null,
+        email: s.akun && s.akun.length > 0 ? s.akun[0].email : null,
+        noWa: s.akun && s.akun.length > 0 ? s.akun[0].noWa : null,
         createdAt: s.createdAt,
         posisiTerakhir: s.posisiTerakhir,
         urutanHafalan: s.urutanHafalan,
@@ -59,6 +57,8 @@ export const getSantriList = createServerFn({ method: 'GET' }).handler(
     }
   }
 )
+
+import { normalisasiEmail, normalisasiNoWa } from '../lib/string-utils'
 
 // ==========================================
 // 2. CREATE SANTRI (ADMIN)
@@ -74,7 +74,8 @@ export const createSantri = createServerFn({ method: 'POST' })
       batasHafalanAyat: z.number().optional().nullable(),
       kelasId: z.string().optional(),
       tipe: z.enum(['reguler', 'dewasa']).default('dewasa'),
-      username: z.string().optional(),
+      email: z.string().optional().nullable(),
+      noWa: z.string().optional().nullable(),
       password: z.string().optional()
     })
     return schema.parse(data)
@@ -87,28 +88,15 @@ export const createSantri = createServerFn({ method: 'POST' })
 
       const tenantId = session.user.tenantId
       
-      let batasHafalanSaatIni = null;
-      if (data.batasHafalanJuz !== null && data.batasHafalanJuz !== undefined && 
-          data.batasHafalanSurah !== null && data.batasHafalanSurah !== undefined && 
-          data.batasHafalanAyat !== null && data.batasHafalanAyat !== undefined) {
-        
-        let surahNomor = 1;
-        if (typeof data.batasHafalanSurah === 'string') {
-          const found = SURAH_LIST.find((s: any) => s.nama.toLowerCase() === (data.batasHafalanSurah as string).toLowerCase());
-          surahNomor = found ? found.nomor : parseInt(data.batasHafalanSurah, 10);
-        } else {
-          surahNomor = data.batasHafalanSurah;
-        }
-        
-        if (!isNaN(surahNomor)) {
-          batasHafalanSaatIni = { juz: data.batasHafalanJuz, surahNomor, ayat: data.batasHafalanAyat };
-        }
-      }
-
       const { urutanHafalan: defaultUrutan, posisiTerakhir: defaultPosisi } = bangunPosisiDariAdminInput(
           data.juzProgress, 
-          batasHafalanSaatIni
+          data.batasHafalanJuz,
+          data.batasHafalanSurah,
+          data.batasHafalanAyat
       )
+
+      const email = data.email ? normalisasiEmail(data.email) : null;
+      const noWa = data.noWa ? normalisasiNoWa(data.noWa) : null;
 
       const result = await db.transaction(async (tx) => {
         const [newSantri] = await tx.insert(santri).values({
@@ -126,16 +114,26 @@ export const createSantri = createServerFn({ method: 'POST' })
         }).returning({ id: santri.id, nama: santri.nama, tipe: santri.tipe })
 
         if (data.tipe === 'dewasa') {
-          if (!data.username || !data.password) {
-            throw new ValidationError('Username dan Password wajib diisi untuk Santri Dewasa')
+          if (!email && !noWa) {
+            throw new ValidationError('Santri wajib mengisi Email atau No WA')
           }
-          const existing = await tx.select({ id: users.id }).from(users).where(eq(users.email, data.username))
-          if (existing.length > 0) throw new ValidationError('Username/Email/No WA sudah terdaftar')
+          if (!data.password) {
+            throw new ValidationError('Password wajib diisi untuk Santri Dewasa')
+          }
+
+          const existing = await tx.select({ id: users.id }).from(users).where(
+            or(
+              email ? eq(users.email, email) : undefined,
+              noWa ? eq(users.noWa, noWa) : undefined
+            )
+          )
+          if (existing.length > 0) throw new ValidationError('Email / No WA sudah terdaftar oleh pengguna lain.')
           
           await tx.insert(users).values({
             tenantId,
             nama: data.nama,
-            email: data.username,
+            email,
+            noWa,
             passwordHash: data.password,
             role: 'santri',
             santriId: newSantri.id
@@ -164,7 +162,8 @@ export const updateSantri = createServerFn({ method: 'POST' })
     batasHafalanAyat: z.number().optional().nullable(),
     kelasId: z.string().optional().nullable(),
     tipe: z.enum(['reguler', 'dewasa']).default('dewasa'),
-    username: z.string().optional(),
+    email: z.string().optional().nullable(),
+    noWa: z.string().optional().nullable(),
     password: z.string().optional()
   }).parse(data))
   .handler(async ({ data }) => {
@@ -174,6 +173,9 @@ export const updateSantri = createServerFn({ method: 'POST' })
       requireRole(session, 'admin')
 
       const tenantId = session.user.tenantId
+
+      const email = data.email ? normalisasiEmail(data.email) : null;
+      const noWa = data.noWa ? normalisasiNoWa(data.noWa) : null;
 
       await db.transaction(async (tx) => {
         // Ambil data santri saat ini untuk memeriksa apakah perlu update posisiTerakhir
@@ -189,27 +191,11 @@ export const updateSantri = createServerFn({ method: 'POST' })
           // Abaikan perubahan juzProgress dari input admin, gunakan yang lama
           data.juzProgress = currentSantri.juzProgress || []
         } else {
-          let batasHafalanSaatIni = null;
-          if (data.batasHafalanJuz !== null && data.batasHafalanJuz !== undefined && 
-              data.batasHafalanSurah !== null && data.batasHafalanSurah !== undefined && 
-              data.batasHafalanAyat !== null && data.batasHafalanAyat !== undefined) {
-            
-            let surahNomor = 1;
-            if (typeof data.batasHafalanSurah === 'string') {
-              const found = SURAH_LIST.find((s: any) => s.nama.toLowerCase() === (data.batasHafalanSurah as string).toLowerCase());
-              surahNomor = found ? found.nomor : parseInt(data.batasHafalanSurah, 10);
-            } else {
-              surahNomor = data.batasHafalanSurah;
-            }
-            
-            if (!isNaN(surahNomor)) {
-              batasHafalanSaatIni = { juz: data.batasHafalanJuz, surahNomor, ayat: data.batasHafalanAyat };
-            }
-          }
-
           const buildPosisi = bangunPosisiDariAdminInput(
              data.juzProgress,
-             batasHafalanSaatIni
+             data.batasHafalanJuz,
+             data.batasHafalanSurah,
+             data.batasHafalanAyat
           );
           newPosisiTerakhir = buildPosisi.posisiTerakhir;
           newUrutanHafalan = buildPosisi.urutanHafalan;
@@ -229,27 +215,33 @@ export const updateSantri = createServerFn({ method: 'POST' })
         }).where(and(eq(santri.id, data.id), eq(santri.tenantId, tenantId)))
 
         if (data.tipe === 'dewasa') {
-          if (!data.username) throw new ValidationError('Username wajib diisi untuk Santri Dewasa')
+          if (!email && !noWa) throw new ValidationError('Santri wajib mengisi Email atau No WA')
           
-          const existing = await tx.select({ id: users.id }).from(users).where(eq(users.email, data.username))
+          const existing = await tx.select({ id: users.id }).from(users).where(
+            or(
+              email ? eq(users.email, email) : undefined,
+              noWa ? eq(users.noWa, noWa) : undefined
+            )
+          )
           const existingUser = existing.find(u => u.id)
           
           const userForSantri = await tx.select({ id: users.id }).from(users).where(eq(users.santriId, data.id))
 
           if (userForSantri.length > 0) {
             if (existingUser && existingUser.id !== userForSantri[0].id) {
-              throw new ValidationError('Username sudah terdaftar')
+              throw new ValidationError('Email / No WA sudah terdaftar oleh pengguna lain.')
             }
-            const updateData: any = { nama: data.nama, email: data.username }
+            const updateData: any = { nama: data.nama, email, noWa }
             if (data.password) updateData.passwordHash = data.password
             await tx.update(users).set(updateData).where(eq(users.id, userForSantri[0].id))
           } else {
             if (!data.password) throw new ValidationError('Password wajib diisi untuk akun baru')
-            if (existingUser) throw new ValidationError('Username sudah terdaftar')
+            if (existingUser) throw new ValidationError('Email / No WA sudah terdaftar oleh pengguna lain.')
             await tx.insert(users).values({
               tenantId,
               nama: data.nama,
-              email: data.username,
+              email,
+              noWa,
               passwordHash: data.password,
               role: 'santri',
               santriId: data.id

@@ -12,7 +12,9 @@ export const users = pgTable('users', {
     .notNull()
     .references(() => tenants.id, { onDelete: 'cascade' }),
   nama: varchar('nama', { length: 255 }).notNull(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
+  username: varchar('username', { length: 255 }).unique(),
+  email: varchar('email', { length: 255 }).unique(),
+  noWa: varchar('no_wa', { length: 50 }).unique(),
   passwordHash: varchar('password_hash', { length: 255 }).notNull(),
   role: roleEnum('role').notNull(),
   // Untuk role 'santri' dan 'wali', merujuk ke data santri terkait
