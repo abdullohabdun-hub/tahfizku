@@ -4,6 +4,7 @@ import { users } from './users'
 import { kelas } from './kelas'
 import { santri } from './santri'
 import { setoran } from './setoran'
+import { impersonationLogs } from './impersonation'
 
 export const tenantsRelations = relations(tenants, ({ many }) => ({
   users: many(users),
@@ -64,3 +65,15 @@ export const setoranRelations = relations(setoran, ({ one }) => ({
     references: [users.id],
   }),
 }))
+
+export const impersonationLogsRelations = relations(impersonationLogs, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [impersonationLogs.tenantId],
+    references: [tenants.id],
+  }),
+  admin: one(users, {
+    fields: [impersonationLogs.adminId],
+    references: [users.id],
+  }),
+}))
+

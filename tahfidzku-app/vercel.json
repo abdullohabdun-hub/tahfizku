@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/assets/(.*)", "destination": "/client/assets/$1" },
+    { "source": "/(manifest\\.webmanifest|manifest\\.json|sw\\.js|favicon\\.ico|robots\\.txt|.*\\.png)", "destination": "/client/$1" },
     { "source": "/(.*)", "destination": "/api/index" }
   ]
 }

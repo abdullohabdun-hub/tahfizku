@@ -11,7 +11,7 @@ import { bangunUrutanHafalan, bangunPosisiDariAdminInput } from '../lib/quranMap
 // ==========================================
 // 1. GET SANTRI LIST (ADMIN & USTADZ)
 // ==========================================
-export const getSantriList = createServerFn({ method: 'GET' }).handler(
+export const getSantriList = createServerFn({ method: 'POST' }).handler(
   async () => {
     try {
       const session = await getAuthSession()

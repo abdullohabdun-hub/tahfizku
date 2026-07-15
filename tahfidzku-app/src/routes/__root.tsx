@@ -1,5 +1,8 @@
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import { useState, useEffect } from 'react'
 import { PwaReloadPrompt } from '../components/PwaReloadPrompt'
+import { ImpersonationBanner } from '../components/ImpersonationBanner'
+import { checkAuth } from '../server-fns/auth'
 import appCss from '../styles.css?url'
 
 export const Route = createRootRoute({
@@ -30,6 +33,15 @@ export const Route = createRootRoute({
     ],
     links: [
       {
+        rel: 'icon',
+        type: 'image/svg+xml',
+        href: '/favicon.svg',
+      },
+      {
+        rel: 'manifest',
+        href: '/manifest.webmanifest',
+      },
+      {
         rel: 'apple-touch-icon',
         href: '/pwa-192x192.png',
       },
@@ -49,10 +61,29 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <GlobalImpersonationBanner />
         {children}
         <PwaReloadPrompt />
         <Scripts />
       </body>
     </html>
+  )
+}
+
+function GlobalImpersonationBanner() {
+  const [session, setSession] = useState<any>(null)
+
+  useEffect(() => {
+    checkAuth().then(user => setSession(user))
+  }, [])
+
+  if (!session || !session.originalAdminId) return null
+
+  return (
+    <ImpersonationBanner 
+      namaTarget={session.nama} 
+      roleTarget={session.role} 
+      expiresAt={session.impersonateExpiresAt} 
+    />
   )
 }

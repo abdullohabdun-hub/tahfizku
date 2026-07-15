@@ -77,7 +77,7 @@ export const logout = createServerFn({ method: 'POST' }).handler(async () => {
 // ═══════════════════════════════════════════════════════
 // 3. CHECK AUTH (Mendapatkan Session Aktif)
 // ═══════════════════════════════════════════════════════
-export const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
+export const checkAuth = createServerFn({ method: 'POST' }).handler(async () => {
   const session = await getSession()
   if (!session) return null
   return session.user

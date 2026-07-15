@@ -11,7 +11,7 @@ import { AuthenticationError } from '../lib/errors'
 // KELAS CRUD (ADMIN ONLY)
 // ==========================================
 
-export const getKelasList = createServerFn({ method: 'GET' }).handler(
+export const getKelasList = createServerFn({ method: 'POST' }).handler(
   async () => {
     try {
       const session = await getAuthSession()

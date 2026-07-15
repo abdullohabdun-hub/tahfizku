@@ -14,13 +14,13 @@ const encodedKey = new TextEncoder().encode(secretKey)
 const SESSION_COOKIE_NAME = 'tahfidzku_session'
 
 // Membuat token JWT dari data user
-export async function createSession(user: SessionUser) {
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 hari
+export async function createSession(user: SessionUser, ttlMinutes: number = 7 * 24 * 60) {
+  const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000)
 
   const sessionToken = await new SignJWT({ ...user })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('7d')
+    .setExpirationTime(Math.floor(expiresAt.getTime() / 1000))
     .sign(encodedKey)
 
   // Menyimpan token ke cookie browser
@@ -54,6 +54,9 @@ export async function getSession(): Promise<{ user: SessionUser } | null> {
         noWa: (payload.noWa as string) || null,
         role: payload.role as SessionUser['role'],
         santriId: (payload.santriId as string) || null,
+        originalAdminId: (payload.originalAdminId as string) || undefined,
+        impersonationLogId: (payload.impersonationLogId as string) || undefined,
+        impersonateExpiresAt: (payload.impersonateExpiresAt as number) || undefined,
       },
     }
   } catch (error) {

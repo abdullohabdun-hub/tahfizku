@@ -7,7 +7,7 @@ import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError, ValidationError } from '../lib/errors'
 
-export const getTenantInfo = createServerFn({ method: 'GET' }).handler(
+export const getTenantInfo = createServerFn({ method: 'POST' }).handler(
   async () => {
     try {
       const session = await getAuthSession()

@@ -10,6 +10,9 @@ export type SessionUser = {
   noWa: string | null
   role: Role
   santriId?: string | null
+  originalAdminId?: string
+  impersonationLogId?: string
+  impersonateExpiresAt?: number
 }
 
 export type Session = {

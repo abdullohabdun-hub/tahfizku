@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { UserSquare2, Plus, Loader2, Trash2, Edit } from 'lucide-react'
+import { UserSquare2, Plus, Loader2, Trash2, Edit, VenetianMask } from 'lucide-react'
 import { getUstadzList, createUstadz, deleteUstadz, updateUstadz } from '../../server-fns/ustadz'
+import { impersonateUser } from '../../server-fns/impersonate'
 import { Button } from '../../components/ui/button'
 
 export const Route = createFileRoute('/admin/ustadz')({
@@ -21,6 +22,10 @@ function DataUstadzPage() {
   const [noWa, setNoWa] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  // Impersonate State
+  const [impersonateTarget, setImpersonateTarget] = useState<any>(null)
+  const [impersonating, setImpersonating] = useState(false)
 
   async function loadData() {
     setLoading(true)
@@ -87,6 +92,19 @@ function DataUstadzPage() {
     }
   }
 
+  const handleImpersonate = async () => {
+    if (!impersonateTarget) return
+    setImpersonating(true)
+    const res = await impersonateUser({ data: { targetRole: 'ustadz', targetId: impersonateTarget.id } })
+    setImpersonating(false)
+    if (res.success && res.data) {
+      window.location.href = res.data.redirectUrl
+    } else {
+      alert(res.error?.message || 'Gagal memulai mode menyamar')
+      setImpersonateTarget(null)
+    }
+  }
+
   return (
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-center justify-between">
@@ -134,6 +152,24 @@ function DataUstadzPage() {
         </div>
       )}
 
+      {impersonateTarget && (
+        <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Konfirmasi Mode Menyamar</h3>
+            <p className="text-slate-600 mb-6">
+              Anda akan masuk ke dashboard sebagai <strong>{impersonateTarget.nama}</strong> (Ustadz). Anda dapat kembali ke mode Admin kapan saja melalui banner di atas layar. Lanjutkan?
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setImpersonateTarget(null)} disabled={impersonating}>Batal</Button>
+              <Button className="bg-orange-600 hover:bg-orange-700 text-white" onClick={handleImpersonate} disabled={impersonating}>
+                {impersonating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <VenetianMask className="w-4 h-4 mr-2" />}
+                Ya, Lanjutkan
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         {loading ? (
           <div className="p-8 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600" /></div>
@@ -171,10 +207,13 @@ function DataUstadzPage() {
                       {new Date(u.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </td>
                     <td className="p-4 text-right flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(u)} className="text-blue-500 hover:text-blue-700 hover:bg-blue-50">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(u)} className="text-blue-500 hover:text-blue-700 hover:bg-blue-50" title="Edit">
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(u.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                      <Button variant="ghost" size="sm" onClick={() => setImpersonateTarget(u)} className="text-orange-500 hover:text-orange-700 hover:bg-orange-50" title="Menyamar">
+                        <VenetianMask className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(u.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50" title="Hapus">
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </td>

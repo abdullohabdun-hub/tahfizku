@@ -10,7 +10,7 @@ import { hitungProgresHalaman } from '../lib/quranMapper'
 // ==========================================
 // 1. ADMIN DASHBOARD
 // ==========================================
-export const getAdminDashboardStats = createServerFn({ method: 'GET' }).handler(
+export const getAdminDashboardStats = createServerFn({ method: 'POST' }).handler(
   async () => {
     try {
       const session = await getAuthSession()
@@ -63,7 +63,7 @@ export const getAdminDashboardStats = createServerFn({ method: 'GET' }).handler(
 // ==========================================
 // 2. USTADZ DASHBOARD
 // ==========================================
-export const getUstadzDashboard = createServerFn({ method: 'GET' }).handler(
+export const getUstadzDashboard = createServerFn({ method: 'POST' }).handler(
   async () => {
     try {
       const session = await getAuthSession()
@@ -130,7 +130,7 @@ export const getUstadzDashboard = createServerFn({ method: 'GET' }).handler(
 // ==========================================
 // 3. SANTRI DASHBOARD
 // ==========================================
-export const getSantriDashboardData = createServerFn({ method: 'GET' }).handler(
+export const getSantriDashboardData = createServerFn({ method: 'POST' }).handler(
   async () => {
     try {
       const session = await getAuthSession()

@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { eq, and, desc, or } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '../db'
-import { users } from '../db/schema'
+import { users, kelas } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError, ValidationError } from '../lib/errors'
@@ -12,7 +12,7 @@ import { normalisasiEmail, normalisasiNoWa, normalisasiUsername } from '../lib/s
 // USTADZ CRUD (ADMIN ONLY)
 // ==========================================
 
-export const getUstadzList = createServerFn({ method: 'GET' }).handler(
+export const getUstadzList = createServerFn({ method: 'POST' }).handler(
   async () => {
     try {
       const session = await getAuthSession()
@@ -141,3 +141,21 @@ export const updateUstadz = createServerFn({ method: 'POST' })
       return handleError(err)
     }
   })
+
+export const getUstadzProfile = createServerFn({ method: 'POST' }).handler(
+  async () => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+      requireRole(session, 'ustadz')
+
+      const halaqoh = await db.query.kelas.findFirst({
+        where: and(eq(kelas.tenantId, session.user.tenantId), eq(kelas.ustadzId, session.user.id))
+      })
+
+      return success({ user: session.user, halaqoh: halaqoh || null }, 'Berhasil mengambil profil ustadz')
+    } catch (err) {
+      return handleError(err)
+    }
+  }
+)

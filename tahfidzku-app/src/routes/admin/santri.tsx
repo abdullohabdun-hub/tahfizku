@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { Users, Plus, Loader2, Trash2, Edit } from 'lucide-react'
+import { Users, Plus, Loader2, Trash2, Edit, VenetianMask } from 'lucide-react'
 import { getSantriList, createSantri, deleteSantri, updateSantri } from '../../server-fns/santri'
 import { getKelasList } from '../../server-fns/kelas'
+import { impersonateUser } from '../../server-fns/impersonate'
 import { getSurahByJuz, getAyatRangeInJuz } from '../../lib/quranMapper'
 import { Button } from '../../components/ui/button'
 
@@ -38,6 +39,10 @@ function DataSantriPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterTipe, setFilterTipe] = useState<'all' | 'reguler' | 'dewasa'>('all')
   const [filterKelas, setFilterKelas] = useState<string>('all')
+
+  // Impersonate State
+  const [impersonateTarget, setImpersonateTarget] = useState<any>(null)
+  const [impersonating, setImpersonating] = useState(false)
 
   async function loadData() {
     setLoading(true)
@@ -180,6 +185,19 @@ function DataSantriPage() {
     }
   }
 
+  const handleImpersonate = async () => {
+    if (!impersonateTarget) return
+    setImpersonating(true)
+    const res = await impersonateUser({ data: { targetRole: 'santri', targetId: impersonateTarget.id } })
+    setImpersonating(false)
+    if (res.success && res.data) {
+      window.location.href = res.data.redirectUrl
+    } else {
+      alert(res.error?.message || 'Gagal memulai mode menyamar')
+      setImpersonateTarget(null)
+    }
+  }
+
   return (
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-center justify-between">
@@ -313,6 +331,24 @@ function DataSantriPage() {
         </div>
       )}
 
+      {impersonateTarget && (
+        <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Konfirmasi Mode Menyamar</h3>
+            <p className="text-slate-600 mb-6">
+              Anda akan masuk ke dashboard sebagai <strong>{impersonateTarget.nama}</strong> (Santri). Anda dapat kembali ke mode Admin kapan saja melalui banner di atas layar. Lanjutkan?
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setImpersonateTarget(null)} disabled={impersonating}>Batal</Button>
+              <Button className="bg-orange-600 hover:bg-orange-700 text-white" onClick={handleImpersonate} disabled={impersonating}>
+                {impersonating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <VenetianMask className="w-4 h-4 mr-2" />}
+                Ya, Lanjutkan
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-6">
         <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row gap-4 justify-between items-center">
           <input
@@ -414,10 +450,13 @@ function DataSantriPage() {
                     </td>
                     <td className="p-4 text-slate-600">{s.targetJuz} Juz</td>
                     <td className="p-4 text-right flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(s)} className="text-blue-500 hover:text-blue-700 hover:bg-blue-50">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(s)} className="text-blue-500 hover:text-blue-700 hover:bg-blue-50" title="Edit">
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(s.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                      <Button variant="ghost" size="sm" onClick={() => setImpersonateTarget(s)} className="text-orange-500 hover:text-orange-700 hover:bg-orange-50" title="Menyamar">
+                        <VenetianMask className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(s.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50" title="Hapus">
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </td>

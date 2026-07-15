@@ -123,7 +123,7 @@ export const updateSetoran = createServerFn({ method: 'POST' })
 // ═══════════════════════════════════════════════════════
 // 3. GET RIWAYAT SETORAN (USTADZ)
 // ═══════════════════════════════════════════════════════
-export const getSetoranRiwayat = createServerFn({ method: 'GET' }).handler(
+export const getSetoranRiwayat = createServerFn({ method: 'POST' }).handler(
   async () => {
     try {
       const session = await getAuthSession()
@@ -160,7 +160,7 @@ export const getSetoranRiwayat = createServerFn({ method: 'GET' }).handler(
 // ═══════════════════════════════════════════════════════
 // 4. GET LAST SETORAN (Untuk Prefill)
 // ═══════════════════════════════════════════════════════
-export const getLastSetoran = createServerFn({ method: 'GET' })
+export const getLastSetoran = createServerFn({ method: 'POST' })
   .validator(z.object({ santriId: z.string().uuid(), jenis: z.enum(['ziyadah', 'sabqi', 'manzil']) }))
   .handler(async ({ data }) => {
     try {
@@ -188,7 +188,7 @@ export const getLastSetoran = createServerFn({ method: 'GET' })
 // ═══════════════════════════════════════════════════════
 // 5. GET SEMUA RIWAYAT SETORAN (ADMIN REPORTS)
 // ═══════════════════════════════════════════════════════
-export const getRiwayatSetoranAdmin = createServerFn({ method: 'GET' })
+export const getRiwayatSetoranAdmin = createServerFn({ method: 'POST' })
   .handler(async () => {
     try {
       const session = await getAuthSession()
@@ -278,7 +278,7 @@ export const inputMurojaah = createServerFn({ method: 'POST' })
 // ═══════════════════════════════════════════════════════
 // 7. GET LAPORAN BULANAN (ADMIN REPORTS)
 // ═══════════════════════════════════════════════════════
-export const getMonthlyReport = createServerFn({ method: 'GET' })
+export const getMonthlyReport = createServerFn({ method: 'POST' })
   .validator((data: unknown) => {
     const schema = z.object({
       year: z.number(),
