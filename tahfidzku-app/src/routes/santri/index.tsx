@@ -139,10 +139,10 @@ function SantriDashboard() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-emerald-600" /> Riwayat Murojaah
+            <Clock className="w-4 h-4 text-emerald-600" /> Setoran Terakhir
           </h2>
-          <Link to="/santri/input" className="text-sm text-emerald-600 font-medium hover:underline">
-            Lapor Baru
+          <Link to="/santri/riwayat" className="text-sm text-emerald-600 font-medium hover:underline">
+            Lihat Semua
           </Link>
         </div>
 

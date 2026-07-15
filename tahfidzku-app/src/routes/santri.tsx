@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useLocation, useRouter } from "@tanstack/react-router"
-import { Home, PencilLine, Award, BookOpen, LogOut } from "lucide-react"
+import { Home, PencilLine, Award, BookOpen, LogOut, History } from "lucide-react"
 import { useState, useEffect } from "react"
 import { checkAuth, logout } from "../server-fns/auth"
 
@@ -31,6 +31,7 @@ function SantriLayout() {
   const navItems = [
     { name: "Beranda", path: "/santri", icon: <Home className="w-5 h-5" /> },
     { name: "Lapor", path: "/santri/input", icon: <PencilLine className="w-5 h-5" /> },
+    { name: "Riwayat", path: "/santri/riwayat", icon: <History className="w-5 h-5" /> },
     { name: "Ujian", path: "/santri/ujian", icon: <Award className="w-5 h-5" /> },
   ]
 

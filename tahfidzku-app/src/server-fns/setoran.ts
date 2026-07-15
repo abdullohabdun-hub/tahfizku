@@ -343,3 +343,45 @@ export const getMonthlyReport = createServerFn({ method: 'POST' })
     }
   })
 
+// ═══════════════════════════════════════════════════════
+// 8. GET RIWAYAT SETORAN (SANTRI)
+// ═══════════════════════════════════════════════════════
+export const getRiwayatSetoranSantri = createServerFn({ method: 'POST' }).handler(
+  async () => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+      requireRole(session, 'santri')
+
+      const tenantId = session.user.tenantId
+      const santriId = session.user.santriId
+
+      if (!santriId) throw new AuthenticationError('Akses ditolak: Bukan akun santri yang valid.')
+
+      // Drizzle's relational queries (.findMany with 'with') inherently use LEFT JOIN
+      // behaviour, meaning rows where ustadzId is null will STILL be returned!
+      const results = await db.query.setoran.findMany({
+        where: and(
+          eq(setoran.tenantId, tenantId),
+          eq(setoran.santriId, santriId)
+        ),
+        orderBy: [desc(setoran.createdAt)],
+        limit: 50,
+        with: {
+          ustadz: { columns: { nama: true } }
+        }
+      })
+
+      // Map untuk frontend compatibility
+      const mappedResults = results.map(s => ({
+        ...s,
+        ustadzNama: s.ustadz?.nama || 'Tanpa Ustadz'
+      }))
+
+      return success(mappedResults, 'Riwayat hafalan berhasil dimuat')
+    } catch (err) {
+      return handleError(err)
+    }
+  }
+)
+
