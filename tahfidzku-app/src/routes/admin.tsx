@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useLocation, useRouter } from "@tanstack/react-router"
-import { BookOpen, Users, UserSquare2, Home, Settings, LogOut, Menu } from "lucide-react"
+import { BookOpen, Users, UserSquare2, Home, Settings, LogOut, Menu, GraduationCap } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Button } from "../components/ui/button"
 import { checkAuth, logout } from "../server-fns/auth"
@@ -40,6 +40,7 @@ function AdminLayout() {
   const navItems = [
     { name: "Dashboard", path: "/admin", icon: <Home className="w-5 h-5" /> },
     { name: "Laporan Bulanan", path: "/admin/laporan", icon: <BookOpen className="w-5 h-5" /> },
+    { name: "Riwayat Ujian", path: "/admin/ujian", icon: <GraduationCap className="w-5 h-5" /> },
     { name: "Data Ustadz", path: "/admin/ustadz", icon: <UserSquare2 className="w-5 h-5" /> },
     { name: "Data Santri", path: "/admin/santri", icon: <Users className="w-5 h-5" /> },
     { name: "Kelas / Halaqoh", path: "/admin/kelas", icon: <BookOpen className="w-5 h-5" /> },

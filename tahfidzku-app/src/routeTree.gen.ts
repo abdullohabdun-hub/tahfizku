@@ -29,6 +29,7 @@ import { Route as SantriRiwayatRouteImport } from './routes/santri/riwayat'
 import { Route as SantriProfilRouteImport } from './routes/santri/profil'
 import { Route as SantriInputRouteImport } from './routes/santri/input'
 import { Route as AdminUstadzRouteImport } from './routes/admin/ustadz'
+import { Route as AdminUjianRouteImport } from './routes/admin/ujian'
 import { Route as AdminSantriRouteImport } from './routes/admin/santri'
 import { Route as AdminPengaturanRouteImport } from './routes/admin/pengaturan'
 import { Route as AdminLaporanRouteImport } from './routes/admin/laporan'
@@ -134,6 +135,11 @@ const AdminUstadzRoute = AdminUstadzRouteImport.update({
   path: '/ustadz',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminUjianRoute = AdminUjianRouteImport.update({
+  id: '/ujian',
+  path: '/ujian',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSantriRoute = AdminSantriRouteImport.update({
   id: '/santri',
   path: '/santri',
@@ -166,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/admin/laporan': typeof AdminLaporanRoute
   '/admin/pengaturan': typeof AdminPengaturanRoute
   '/admin/santri': typeof AdminSantriRoute
+  '/admin/ujian': typeof AdminUjianRoute
   '/admin/ustadz': typeof AdminUstadzRoute
   '/santri/input': typeof SantriInputRoute
   '/santri/profil': typeof SantriProfilRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/admin/laporan': typeof AdminLaporanRoute
   '/admin/pengaturan': typeof AdminPengaturanRoute
   '/admin/santri': typeof AdminSantriRoute
+  '/admin/ujian': typeof AdminUjianRoute
   '/admin/ustadz': typeof AdminUstadzRoute
   '/santri/input': typeof SantriInputRoute
   '/santri/profil': typeof SantriProfilRoute
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/admin/laporan': typeof AdminLaporanRoute
   '/admin/pengaturan': typeof AdminPengaturanRoute
   '/admin/santri': typeof AdminSantriRoute
+  '/admin/ujian': typeof AdminUjianRoute
   '/admin/ustadz': typeof AdminUstadzRoute
   '/santri/input': typeof SantriInputRoute
   '/santri/profil': typeof SantriProfilRoute
@@ -243,6 +252,7 @@ export interface FileRouteTypes {
     | '/admin/laporan'
     | '/admin/pengaturan'
     | '/admin/santri'
+    | '/admin/ujian'
     | '/admin/ustadz'
     | '/santri/input'
     | '/santri/profil'
@@ -265,6 +275,7 @@ export interface FileRouteTypes {
     | '/admin/laporan'
     | '/admin/pengaturan'
     | '/admin/santri'
+    | '/admin/ujian'
     | '/admin/ustadz'
     | '/santri/input'
     | '/santri/profil'
@@ -291,6 +302,7 @@ export interface FileRouteTypes {
     | '/admin/laporan'
     | '/admin/pengaturan'
     | '/admin/santri'
+    | '/admin/ujian'
     | '/admin/ustadz'
     | '/santri/input'
     | '/santri/profil'
@@ -458,6 +470,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUstadzRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/ujian': {
+      id: '/admin/ujian'
+      path: '/ujian'
+      fullPath: '/admin/ujian'
+      preLoaderRoute: typeof AdminUjianRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/santri': {
       id: '/admin/santri'
       path: '/santri'
@@ -494,6 +513,7 @@ interface AdminRouteChildren {
   AdminLaporanRoute: typeof AdminLaporanRoute
   AdminPengaturanRoute: typeof AdminPengaturanRoute
   AdminSantriRoute: typeof AdminSantriRoute
+  AdminUjianRoute: typeof AdminUjianRoute
   AdminUstadzRoute: typeof AdminUstadzRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -503,6 +523,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminLaporanRoute: AdminLaporanRoute,
   AdminPengaturanRoute: AdminPengaturanRoute,
   AdminSantriRoute: AdminSantriRoute,
+  AdminUjianRoute: AdminUjianRoute,
   AdminUstadzRoute: AdminUstadzRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
