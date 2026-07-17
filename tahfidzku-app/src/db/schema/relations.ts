@@ -4,6 +4,7 @@ import { users } from './users'
 import { kelas } from './kelas'
 import { santri } from './santri'
 import { setoran } from './setoran'
+import { ujian } from './ujian'
 import { impersonationLogs } from './impersonation'
 
 export const tenantsRelations = relations(tenants, ({ many }) => ({
@@ -11,6 +12,7 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
   kelas: many(kelas),
   santri: many(santri),
   setoran: many(setoran),
+  ujian: many(ujian),
 }))
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -48,6 +50,7 @@ export const santriRelations = relations(santri, ({ one, many }) => ({
     references: [kelas.id],
   }),
   setoran: many(setoran),
+  ujian: many(ujian),
   akun: many(users), // Akun wali / santri yang terhubung ke santri ini
 }))
 
@@ -62,6 +65,21 @@ export const setoranRelations = relations(setoran, ({ one }) => ({
   }),
   ustadz: one(users, {
     fields: [setoran.ustadzId],
+    references: [users.id],
+  }),
+}))
+
+export const ujianRelations = relations(ujian, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [ujian.tenantId],
+    references: [tenants.id],
+  }),
+  santri: one(santri, {
+    fields: [ujian.santriId],
+    references: [santri.id],
+  }),
+  ustadz: one(users, {
+    fields: [ujian.ustadzId],
     references: [users.id],
   }),
 }))

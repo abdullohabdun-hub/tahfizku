@@ -42,7 +42,22 @@ export const createSetoran = createServerFn({ method: 'POST' })
 
       const tenantId = session.user.tenantId
 
-      // Hapus penggunaan db.transaction() karena tidak didukung Neon HTTP
+      // GATING: Blokir Ziyadah baru jika santri masih punya ujian kenaikan pending
+      if (data.jenis === 'ziyadah') {
+        const [curSantri] = await db
+          .select({ juzUjianPending: santri.juzUjianPending })
+          .from(santri)
+          .where(and(eq(santri.id, data.santriId), eq(santri.tenantId, tenantId)))
+          .limit(1)
+
+        if (curSantri?.juzUjianPending) {
+          throw new ValidationError(
+            `Santri ini masih memiliki Ujian Kenaikan Juz ${curSantri.juzUjianPending} yang belum diselesaikan. ` +
+            `Selesaikan ujian terlebih dahulu sebelum melanjutkan Ziyadah.`
+          )
+        }
+      }
+
       // 1. Insert setoran
       const [newSetoran] = await db
         .insert(setoran)
@@ -67,14 +82,24 @@ export const createSetoran = createServerFn({ method: 'POST' })
         })
         .returning()
 
-      // 2. Update tracker posisiTerakhir jika Ziyadah
+      // 2. Update posisiTerakhir + auto-set juzUjianPending jika juz selesai
       if (data.jenis === 'ziyadah' && data.surahNomor && data.ayatAkhir) {
         await db
           .update(santri)
-          .set({ 
-            posisiTerakhir: { surahNomor: data.surahNomor, ayat: data.ayatAkhir }
-          })
+          .set({ posisiTerakhir: { surahNomor: data.surahNomor, ayat: data.ayatAkhir } })
           .where(eq(santri.id, data.santriId))
+
+        // Cek apakah posisi tepat di ayat terakhir sebuah juz → trigger ujian pending
+        const juzSelesaiNow = cariJuzUntukAyat(data.surahNomor, data.ayatAkhir)
+        if (juzSelesaiNow) {
+          const akhirJuz = getAyatTerakhirJuz(juzSelesaiNow)
+          if (data.surahNomor === akhirJuz.surahNomor && data.ayatAkhir === akhirJuz.ayat) {
+            await db
+              .update(santri)
+              .set({ juzUjianPending: juzSelesaiNow })
+              .where(eq(santri.id, data.santriId))
+          }
+        }
       }
 
       return success(newSetoran, 'Setoran berhasil disimpan')

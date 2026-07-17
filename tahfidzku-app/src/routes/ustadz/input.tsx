@@ -1,6 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import React, { useState, useEffect, useMemo } from 'react'
-import { ChevronDown, Loader2 } from 'lucide-react'
+import { ChevronDown, Loader2, AlertTriangle } from 'lucide-react'
 import { getSantriList } from '../../server-fns/santri'
 import { createSetoran } from '../../server-fns/setoran'
 import { SetoranForm } from '../../components/SetoranForm'
@@ -103,6 +103,27 @@ function InputSetoranPage() {
           <ChevronDown className="h-4 w-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
         </div>
       </div>
+
+      {/* UJIAN PENDING BANNER */}
+      {selectedSantri?.juzUjianPending && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-bold text-red-800">
+              ⛔ Ziyadah diblokir — Ujian Kenaikan Juz {selectedSantri.juzUjianPending} belum diselesaikan
+            </p>
+            <p className="text-xs text-red-600 mt-0.5">
+              Santri ini harus lulus ujian terlebih dahulu sebelum bisa melanjutkan hafalan ke juz berikutnya.
+            </p>
+          </div>
+          <Link
+            to="/ustadz/ujian"
+            className="shrink-0 text-xs font-bold bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+          >
+            Buka Ujian →
+          </Link>
+        </div>
+      )}
 
       {/* 1.5 Setup Hafalan Awal untuk Santri Baru */}
       {!selectedSantri?.posisiTerakhir && (
