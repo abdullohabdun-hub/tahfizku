@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { Settings, Save, Loader2, Building, Link as LinkIcon } from 'lucide-react'
-import { getTenantInfo, updateTenantInfo } from '../../server-fns/admin-settings'
+import { getTenantInfo, updateTenantInfo, runDbMigration } from '../../server-fns/admin-settings'
 import { Button } from '../../components/ui/button'
 
 export const Route = createFileRoute('/admin/pengaturan')({
@@ -112,6 +112,24 @@ function PengaturanPage() {
             </div>
           </form>
         </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-6 mt-8">
+        <h3 className="font-semibold text-lg text-slate-800 mb-2">Sistem Database</h3>
+        <p className="text-xs text-slate-500 mb-4">Jika Anda mengalami masalah (bug) setelah pembaruan aplikasi, klik tombol di bawah ini untuk memastikan skema database sudah tersinkronisasi.</p>
+        <Button 
+          type="button" 
+          variant="outline"
+          onClick={async () => {
+            if(confirm('Jalankan migrasi database sekarang?')) {
+              const res = await runDbMigration()
+              if(res.success) alert(res.data)
+              else alert(res.error?.message)
+            }
+          }}
+        >
+          Sinkronisasi Database
+        </Button>
       </div>
     </div>
   )
