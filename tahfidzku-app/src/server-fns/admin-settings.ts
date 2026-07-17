@@ -12,7 +12,7 @@ export const getTenantInfo = createServerFn({ method: 'POST' }).handler(
     try {
       const session = await getAuthSession()
       if (!session) throw new AuthenticationError()
-      requireRole(session, 'admin')
+      requireRole(session, 'admin', 'ustadz', 'wali', 'santri')
 
       const result = await db
         .select({
