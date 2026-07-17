@@ -1271,11 +1271,12 @@ export function bangunPosisiDariAdminInput(juzProgress: number[], batasHafalanJu
 export function getValidJuzList(profile: {
   urutanHafalan?: number[] | null,
   juzProgress?: number[] | null,
-  posisiTerakhir?: { surahNomor: number, ayat: number } | null
+  posisiTerakhir?: { surahNomor: number, ayat: number } | null,
+  juzUjianPending?: number | null
 }): number[] {
   if (!profile) return [];
   const urutan = profile.urutanHafalan || urutanJuzStandar();
-  let passedJuzList = kalkulasiJuzProgress(profile.urutanHafalan || [], profile.posisiTerakhir);
+  let passedJuzList = kalkulasiJuzProgress(profile.urutanHafalan || [], profile.posisiTerakhir, profile.juzUjianPending);
   if (profile.posisiTerakhir) {
     const curJuz = cariJuzUntukAyat(profile.posisiTerakhir.surahNomor, profile.posisiTerakhir.ayat);
     const currentIndex = urutan.indexOf(curJuz);
@@ -1291,7 +1292,7 @@ export function getValidJuzList(profile: {
   return passedJuzList;
 }
 
-export function kalkulasiJuzProgress(urutanHafalan: number[], posisiTerakhir: { surahNomor: number, ayat: number } | null): number[] {
+export function kalkulasiJuzProgress(urutanHafalan: number[], posisiTerakhir: { surahNomor: number, ayat: number } | null, juzUjianPending?: number | null): number[] {
   if (!posisiTerakhir) return [];
   const juzSekarang = cariJuzUntukAyat(posisiTerakhir.surahNomor, posisiTerakhir.ayat);
   const indexJuzSekarang = urutanHafalan.indexOf(juzSekarang);
@@ -1299,7 +1300,9 @@ export function kalkulasiJuzProgress(urutanHafalan: number[], posisiTerakhir: { 
   const completed = urutanHafalan.slice(0, indexJuzSekarang);
   const akhirJuz = getAyatTerakhirJuz(juzSekarang);
   if (posisiTerakhir.surahNomor === akhirJuz.surahNomor && posisiTerakhir.ayat === akhirJuz.ayat) {
-    completed.push(juzSekarang);
+    if (juzUjianPending !== juzSekarang) {
+      completed.push(juzSekarang);
+    }
   }
   return completed;
 }

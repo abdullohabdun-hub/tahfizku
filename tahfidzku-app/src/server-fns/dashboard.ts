@@ -149,7 +149,7 @@ export const getSantriDashboardData = createServerFn({ method: 'POST' }).handler
       })
 
       const targetJuz = profil?.targetJuz || 30
-      const juzSelesai = profil ? kalkulasiJuzProgress(profil.urutanHafalan || [], profil.posisiTerakhir).length : 0
+      const juzSelesai = profil ? kalkulasiJuzProgress(profil.urutanHafalan || [], profil.posisiTerakhir, profil.juzUjianPending).length : 0
       
       let progressPercentage = Math.round((juzSelesai / targetJuz) * 100)
       try {

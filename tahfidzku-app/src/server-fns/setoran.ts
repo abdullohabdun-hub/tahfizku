@@ -192,11 +192,22 @@ export const updateSetoran = createServerFn({ method: 'POST' })
           throw new ForbiddenError('Data ini sudah tidak bisa diedit karena sudah ada setoran ziyadah baru sesudahnya.')
         }
 
-        // Hitung ulang posisiTerakhir
+        // Cek apakah posisi tepat di ayat terakhir sebuah juz → trigger ujian pending, else clear
+        const juzSelesaiNow = cariJuzUntukAyat(data.surahNomor, data.ayatAkhir)
+        let setJuzPending: number | null = null;
+        if (juzSelesaiNow) {
+          const akhirJuz = getAyatTerakhirJuz(juzSelesaiNow)
+          if (data.surahNomor === akhirJuz.surahNomor && data.ayatAkhir === akhirJuz.ayat) {
+            setJuzPending = juzSelesaiNow;
+          }
+        }
+
+        // Hitung ulang posisiTerakhir dan update juzUjianPending
         await db
           .update(santri)
           .set({ 
-            posisiTerakhir: { surahNomor: data.surahNomor, ayat: data.ayatAkhir }
+            posisiTerakhir: { surahNomor: data.surahNomor, ayat: data.ayatAkhir },
+            juzUjianPending: setJuzPending
           })
           .where(eq(santri.id, data.santriId))
 

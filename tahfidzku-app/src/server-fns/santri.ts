@@ -54,7 +54,7 @@ export const getSantriList = createServerFn({ method: 'POST' }).handler(
         targetJuz: s.targetJuz,
         kelasId: s.kelasId,
         kelasNama: s.kelas?.nama || null,
-        juzProgress: kalkulasiJuzProgress(s.urutanHafalan || [], s.posisiTerakhir),
+        juzProgress: kalkulasiJuzProgress(s.urutanHafalan || [], s.posisiTerakhir, s.juzUjianPending),
         batasHafalanJuz: s.batasHafalanJuz,
         batasHafalanSurah: s.batasHafalanSurah,
         batasHafalanAyat: s.batasHafalanAyat,
@@ -64,6 +64,7 @@ export const getSantriList = createServerFn({ method: 'POST' }).handler(
         createdAt: s.createdAt,
         posisiTerakhir: s.posisiTerakhir,
         urutanHafalan: s.urutanHafalan,
+        juzUjianPending: s.juzUjianPending,
       }))
 
       return success(mapped, 'Berhasil mengambil daftar santri')
@@ -354,7 +355,7 @@ export const getSantriProfile = createServerFn({ method: 'POST' }).handler(async
 
     if (!profile) throw new Error('Profil santri tidak ditemukan')
 
-    profile.juzProgress = kalkulasiJuzProgress(profile.urutanHafalan || [], profile.posisiTerakhir);
+    profile.juzProgress = kalkulasiJuzProgress(profile.urutanHafalan || [], profile.posisiTerakhir, profile.juzUjianPending);
 
     return success(profile, 'Berhasil memuat profil santri')
   } catch (err) {
