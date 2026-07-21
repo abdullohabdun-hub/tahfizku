@@ -11,6 +11,9 @@ export const Route = createFileRoute('/')({
 
     // Jika user sudah login, langsung arahkan ke dashboard masing-masing
     if (user) {
+      if ((user as any).isSuperAdmin) {
+        throw redirect({ to: '/superadmin' })
+      }
       switch (user.role) {
         case 'admin':
           throw redirect({ to: '/admin' })
@@ -46,7 +49,7 @@ function Page() {
             <Link to="/login" className={cn(buttonVariants({ variant: "ghost", className: "hidden sm:inline-flex" }))}>
               Masuk
             </Link>
-            <Link to="/login" className={cn(buttonVariants({ className: "bg-emerald-600 hover:bg-emerald-700 text-white" }))}>
+            <Link to="/register" className={cn(buttonVariants({ className: "bg-emerald-600 hover:bg-emerald-700 text-white" }))}>
               Daftarkan Lembaga
             </Link>
           </div>
@@ -70,7 +73,7 @@ function Page() {
               Tingkatkan efisiensi lembaga tahfidz Anda dengan sistem murni logika database tanpa kompleksitas. Fokus pada hafalan santri, biarkan kami yang mengurus datanya. 100% Gratis.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/login" className={cn(buttonVariants({ size: "lg", className: "w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white h-12 px-8 text-base" }))}>
+              <Link to="/register" className={cn(buttonVariants({ size: "lg", className: "w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white h-12 px-8 text-base" }))}>
                 Gunakan Secara Gratis <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
               <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 text-base border-slate-300">

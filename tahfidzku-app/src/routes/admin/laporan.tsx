@@ -4,13 +4,20 @@ import { Printer, Loader2, FileText, ChevronDown, ChevronUp, ChevronsUpDown } fr
 import { flexRender, getCoreRowModel, useReactTable, getSortedRowModel } from "@tanstack/react-table"
 import type { SortingState } from "@tanstack/react-table"
 import { getMonthlyReport } from '../../server-fns/setoran'
+import { getAllRubrikTenant } from '../../server-fns/rubrik'
+import { FormatPenilaian } from '../../components/FormatPenilaian'
 import { Button } from '../../components/ui/button'
 
 export const Route = createFileRoute('/admin/laporan')({
-  component: LaporanBulananPage,
+  component: AdminLaporanBulanan,
+  loader: async () => {
+    const rubrikRes = await getAllRubrikTenant()
+    return { rubrikAktif: rubrikRes.data }
+  },
 })
 
-function LaporanBulananPage() {
+function AdminLaporanBulanan() {
+  const { rubrikAktif } = Route.useLoaderData()
   const [loading, setLoading] = useState(false)
   const [data, setData] = useState<any[]>([])
   const [sorting, setSorting] = useState<SortingState>([])
@@ -89,19 +96,19 @@ function LaporanBulananPage() {
       cell: ({ row }: any) => {
         const d = row.original
         if (d.jenis === 'ziyadah') {
-          return `${d.surah}: ${d.ayatAwal}-${d.ayatAkhir}`
+          // Backward compatibility: surah bisa saja dari surahMeta.nama jika surah lama null
+          const surahName = d.surah || (d.surahMeta && d.surahMeta.length > 0 ? d.surahMeta[0].nama : 'Unknown')
+          return `${surahName}: ${d.ayatAwal}-${d.ayatAkhir}`
         }
-        return `Juz ${d.juz} Hal ${d.halamanAwal}-${d.halamanAkhir}`
+        const juzVal = d.lintasJuz ? `${d.juzMulai}-${d.juzSelesai}` : (d.juzMulai || d.juz)
+        return `Juz ${juzVal} Hal ${d.halamanAwal}-${d.halamanAkhir}`
       }
     },
     {
       accessorKey: 'kualitas',
       header: 'Kualitas',
       cell: ({ row }: any) => {
-        const val = row.getValue('kualitas') as string
-        const color = val === 'lancar' ? 'text-emerald-700 bg-emerald-100' :
-                      val === 'mengulang' ? 'text-amber-700 bg-amber-100' : 'text-red-700 bg-red-100'
-        return <span className={`capitalize text-[10px] font-bold px-2 py-1 rounded ${color}`}>{val}</span>
+        return <FormatPenilaian item={row.original} rubrikAktif={rubrikAktif} />
       }
     },
     {

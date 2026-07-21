@@ -151,6 +151,12 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
 
   const [kualitas, setKualitas] = useState<'lancar' | 'mengulang' | 'terbata' | null>(null)
   const [catatan, setCatatan] = useState('')
+  const [rubrikAktif, setRubrikAktif] = useState<any[]>([])
+  const [penilaianKustom, setPenilaianKustom] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    getRubrikAktif().then(res => setRubrikAktif(res || [])).catch(console.error)
+  }, [])
 
   // INISIALISASI DATA
   useEffect(() => {
@@ -158,6 +164,9 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
       setJenisSetoran(initialData.jenis)
       setKualitas(initialData.kualitas)
       setCatatan(initialData.catatan || '')
+      if (initialData.penilaianKustom) {
+        setPenilaianKustom(initialData.penilaianKustom)
+      }
 
       if (initialData.jenis === 'ziyadah') {
         const surah = Object.values(surahByNomor).find((s: any) => s.nama === initialData.surah)
@@ -308,7 +317,12 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
     setSuccessMsg('')
 
     if (mode === 'create' && !santri && isUstadz) return setErrorMsg('Pilih santri terlebih dahulu')
-    if (!kualitas) return setErrorMsg('Pilih kualitas hafalan')
+    if (rubrikAktif.length > 0) {
+      const missingRubrik = rubrikAktif.find(r => !penilaianKustom[r.key])
+      if (missingRubrik) return setErrorMsg(`Nilai untuk dimensi "${missingRubrik.label}" belum diisi`)
+    } else {
+      if (!kualitas) return setErrorMsg('Pilih kualitas hafalan')
+    }
 
     setSubmitting(true)
 
@@ -317,6 +331,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
         jenis: jenisSetoran,
         kualitas,
         catatan,
+        penilaianKustom: rubrikAktif.length > 0 ? penilaianKustom : undefined,
       }
 
       if (mode === 'create') {
@@ -370,6 +385,7 @@ export function SetoranForm({ mode, initialData, santri, defaultJenis, onSubmit,
         if (mode === 'create') {
             setCatatan('')
             setKualitas(null)
+            setPenilaianKustom({})
             if (jenisSetoran === 'ziyadah') {
                 setSurahSelesaiNomor(0)
                 setAyatSelesai('')

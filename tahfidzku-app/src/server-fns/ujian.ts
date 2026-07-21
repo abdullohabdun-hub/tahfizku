@@ -265,3 +265,47 @@ export const getUjianBySantri = createServerFn({ method: 'POST' })
       return handleError(err)
     }
   })
+
+// ══════════════════════════════════════════════════════════
+// 5. GET RIWAYAT UJIAN SANTRI SENDIRI (Khusus Role Santri)
+// ══════════════════════════════════════════════════════════
+export const getRiwayatUjianSantri = createServerFn({ method: 'POST' })
+  .handler(async () => {
+    try {
+      const session = await getAuthSession()
+      if (!session) throw new AuthenticationError()
+      requireRole(session, 'santri')
+
+      const tenantId = session.user.tenantId
+      const santriId = session.user.santriId
+
+      if (!santriId) throw new AuthenticationError('Akses ditolak: Bukan akun santri yang valid.')
+
+      const [santriData] = await db.select({ juzUjianPending: santri.juzUjianPending }).from(santri).where(eq(santri.id, santriId)).limit(1)
+
+      const results = await db.query.ujian.findMany({
+        where: and(
+          eq(ujian.tenantId, tenantId),
+          eq(ujian.santriId, santriId)
+        ),
+        orderBy: [desc(ujian.createdAt)],
+        limit: 50,
+        with: {
+          ustadz: { columns: { nama: true } }
+        }
+      })
+
+      const mappedResults = results.map(u => ({
+        ...u,
+        ustadzNama: u.ustadz?.nama || 'Tanpa Ustadz'
+      }))
+
+      return success({
+        riwayat: mappedResults,
+        juzUjianPending: santriData?.juzUjianPending || null
+      }, 'Riwayat ujian berhasil dimuat')
+    } catch (err) {
+      return handleError(err)
+    }
+  })
+

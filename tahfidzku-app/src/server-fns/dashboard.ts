@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { eq, and, desc, gte } from 'drizzle-orm'
 import { db } from '../db'
-import { santri, setoran, users, kelas } from '../db/schema'
+import { santri, setoran, users, kelas, tenants } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { success, handleError } from '../lib/response'
 import { AuthenticationError } from '../lib/errors'
@@ -18,6 +18,8 @@ export const getAdminDashboardStats = createServerFn({ method: 'POST' }).handler
       requireRole(session, 'admin')
 
       const tenantId = session.user.tenantId
+
+      const [tenantInfo] = await db.select({ status: tenants.status, trialEndsAt: tenants.trialEndsAt }).from(tenants).where(eq(tenants.id, tenantId)).limit(1)
 
       const santriList = await db.select({ id: santri.id }).from(santri).where(eq(santri.tenantId, tenantId))
       const ustadzList = await db.select({ id: users.id }).from(users).where(and(eq(users.tenantId, tenantId), eq(users.role, 'ustadz')))
@@ -53,6 +55,8 @@ export const getAdminDashboardStats = createServerFn({ method: 'POST' }).handler
         totalUstadz: ustadzList.length,
         totalSetoranHariIni: setoranHariIniList.length,
         recentSetoran: formattedRecent,
+        tenantStatus: tenantInfo?.status || 'aktif',
+        trialEndsAt: tenantInfo?.trialEndsAt || null,
       }, 'Berhasil mengambil statistik dashboard')
     } catch (err) {
       return handleError(err)
@@ -214,3 +218,6 @@ export const getSantriDashboardData = createServerFn({ method: 'POST' }).handler
     }
   }
 )
+
+// Alias untuk konsistensi dengan import yang dipakai di src/routes/santri/index.tsx
+export { getSantriDashboardData as getSantriDashboard }

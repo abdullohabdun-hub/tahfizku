@@ -1297,12 +1297,16 @@ export function kalkulasiJuzProgress(urutanHafalan: number[], posisiTerakhir: { 
   const juzSekarang = cariJuzUntukAyat(posisiTerakhir.surahNomor, posisiTerakhir.ayat);
   const indexJuzSekarang = urutanHafalan.indexOf(juzSekarang);
   if (indexJuzSekarang === -1) return [];
-  const completed = urutanHafalan.slice(0, indexJuzSekarang);
+  let completed = urutanHafalan.slice(0, indexJuzSekarang);
   const akhirJuz = getAyatTerakhirJuz(juzSekarang);
   if (posisiTerakhir.surahNomor === akhirJuz.surahNomor && posisiTerakhir.ayat === akhirJuz.ayat) {
     if (juzUjianPending !== juzSekarang) {
       completed.push(juzSekarang);
     }
+  }
+  // Cegah juzUjianPending masuk Mutqin jika sudah kadung berada di slice sebelumnya (misal data legacy)
+  if (juzUjianPending) {
+    completed = completed.filter(juz => juz !== juzUjianPending);
   }
   return completed;
 }

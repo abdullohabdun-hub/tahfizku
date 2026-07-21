@@ -40,3 +40,44 @@ export function requireRole(session: Session, ...allowedRoles: Role[]): void {
   }
 }
 
+/**
+ * Memastikan user adalah Super Admin (berdasarkan UUID dari environment).
+ * Tidak bergantung pada kolom 'role' atau 'tenant.status'.
+ */
+export function requireSuperAdmin(session: Session): void {
+  if (!session) {
+    throw new Error('UNAUTHENTICATED')
+  }
+  if (session.user.id !== process.env.SUPERADMIN_USER_ID) {
+    throw new Error('FORBIDDEN')
+  }
+}
+
+/**
+ * Middleware TanStack Start: memastikan request memiliki session aktif.
+ * Meng-inject `user` ke context agar handler bisa mengaksesnya via `context.user`.
+ * Cara pakai: `.middleware([requireAuth])`
+ */
+export async function requireAuth() {
+  const session = await getAuthSession()
+  if (!session) {
+    throw new Error('UNAUTHENTICATED')
+  }
+  return {
+    user: session.user,
+  }
+}
+
+/**
+ * Memastikan user memiliki salah satu role yang diizinkan pada tenant ini.
+ * Dipanggil dari handler setelah `requireAuth` mengisi `context.user`.
+ */
+export function requireTenantRole(user: SessionUser, allowedRoles: Role[]): void {
+  if (!user) {
+    throw new Error('UNAUTHENTICATED')
+  }
+  if (!allowedRoles.includes(user.role)) {
+    throw new Error('FORBIDDEN')
+  }
+}
+

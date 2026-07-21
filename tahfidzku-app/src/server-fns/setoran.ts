@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { eq, and, desc, sql } from 'drizzle-orm'
 import { db } from '../db'
-import { setoran, santri } from '../db/schema'
+import { setoran, santri, rubrikPenilaian } from '../db/schema'
 import { getAuthSession, requireRole } from '../middleware/auth.middleware'
 import { createSetoranSchema, updateSetoranSchema } from '../lib/validators'
 import { success, handleError } from '../lib/response'
@@ -10,6 +10,27 @@ import { AuthenticationError, ForbiddenError, ValidationError } from '../lib/err
 import { z } from 'zod'
 import { cariJuzUntukAyat, getAyatTerakhirJuz, getValidJuzList } from '../lib/quranMapper'
 
+
+// Helper for dynamic validation
+async function validatePenilaianKustom(tenantId: string, penilaianKustom: any) {
+  const aktifRubrik = await db.query.rubrikPenilaian.findMany({
+    where: and(
+      eq(rubrikPenilaian.tenantId, tenantId),
+      eq(rubrikPenilaian.aktif, true)
+    )
+  })
+
+  if (aktifRubrik.length > 0) {
+    if (!penilaianKustom || typeof penilaianKustom !== 'object') {
+      throw new ValidationError('Penilaian harus diisi sesuai rubrik yang berlaku.')
+    }
+    for (const r of aktifRubrik) {
+      if (!penilaianKustom[r.key]) {
+        throw new ValidationError(`Nilai untuk dimensi "${r.label}" wajib diisi.`)
+      }
+    }
+  }
+}
 
 // Helper function to safely calculate the final position for Ziyadah
 // This ensures that even for cross-surah entries, we pick the true ending point.
@@ -41,6 +62,9 @@ export const createSetoran = createServerFn({ method: 'POST' })
       requireRole(session, 'ustadz')
 
       const tenantId = session.user.tenantId
+
+      // Validasi Wajib-Isi Dinamis
+      await validatePenilaianKustom(tenantId, data.penilaianKustom)
 
       // GATING: Blokir Ziyadah baru jika santri masih punya ujian kenaikan pending
       if (data.jenis === 'ziyadah') {
@@ -77,6 +101,7 @@ export const createSetoran = createServerFn({ method: 'POST' })
           ayatAkhir: data.ayatAkhir ?? null,
           surahMeta: data.surahMeta ?? null,
           kualitas: data.kualitas,
+          penilaianKustom: data.penilaianKustom,
           catatan: data.catatan ?? null,
           sumber: 'ustadz',
         })
@@ -121,6 +146,9 @@ export const updateSetoran = createServerFn({ method: 'POST' })
 
       const tenantId = session.user.tenantId
       
+      // Validasi Wajib-Isi Dinamis
+      await validatePenilaianKustom(tenantId, data.penilaianKustom)
+
       // Ambil data lama
       const [oldSetoran] = await db.select().from(setoran).where(
         and(
@@ -171,6 +199,7 @@ export const updateSetoran = createServerFn({ method: 'POST' })
             "ayat_akhir" = ${data.ayatAkhir},
             "surah_meta" = ${data.surahMeta}::jsonb,
             "kualitas" = ${data.kualitas},
+            "penilaian_kustom" = ${data.penilaianKustom ? JSON.stringify(data.penilaianKustom) : null}::jsonb,
             "catatan" = ${data.catatan || null},
             "updated_at" = NOW(),
             "updated_by" = ${session.user.id},
@@ -224,6 +253,7 @@ export const updateSetoran = createServerFn({ method: 'POST' })
             halamanAwal: data.halamanAwal,
             halamanAkhir: data.halamanAkhir,
             kualitas: data.kualitas,
+            penilaianKustom: data.penilaianKustom,
             catatan: data.catatan || null,
             updatedAt: new Date(),
             updatedBy: session.user.id,
@@ -358,7 +388,8 @@ export const inputMurojaah = createServerFn({ method: 'POST' })
       halamanAwal: z.number(),
       halamanAkhir: z.number(),
       surahMeta: z.record(z.string(), z.any()),
-      kualitas: z.enum(['lancar', 'mengulang', 'terbata']),
+      kualitas: z.enum(['lancar', 'mengulang', 'terbata']).optional().nullable(),
+      penilaianKustom: z.record(z.string(), z.any()).optional().nullable(),
       catatan: z.string().optional(),
     })
     return schema.parse(data)
@@ -391,6 +422,9 @@ export const inputMurojaah = createServerFn({ method: 'POST' })
           assignedUstadzId = ustadzList.length > 0 ? ustadzList[0].id : session.user.id // Fallback
       }
 
+      // Validasi Wajib-Isi Dinamis
+      await validatePenilaianKustom(session.user.tenantId, data.penilaianKustom)
+
       // Validasi Sabqi/Manzil Juz di backend
       if (data.jenis === 'sabqi' || data.jenis === 'manzil') {
         const profile = await db.query.santri.findFirst({ where: eq(santri.id, santriId) })
@@ -419,6 +453,7 @@ export const inputMurojaah = createServerFn({ method: 'POST' })
         surah: null, // Legacy field, surahMeta handles this now, or we can extract from surahMeta
         surahMeta: data.surahMeta,
         kualitas: data.kualitas,
+        penilaianKustom: data.penilaianKustom,
         catatan: data.catatan || null,
         sumber: 'santri_self_report',
       }).returning()
@@ -535,7 +570,8 @@ export const updateSetoranSantri = createServerFn({ method: 'POST' })
       halamanAwal: z.number(),
       halamanAkhir: z.number(),
       surahMeta: z.record(z.string(), z.any()),
-      kualitas: z.enum(['lancar', 'mengulang', 'terbata']),
+      kualitas: z.enum(['lancar', 'mengulang', 'terbata']).optional().nullable(),
+      penilaianKustom: z.record(z.string(), z.any()).optional().nullable(),
       catatan: z.string().optional(),
     })
     return schema.parse(data)
@@ -549,6 +585,9 @@ export const updateSetoranSantri = createServerFn({ method: 'POST' })
       const santriId = session.user.santriId
       if (!santriId) throw new Error('Data santri tidak valid.')
       const tenantId = session.user.tenantId
+
+      // Validasi Wajib-Isi Dinamis
+      await validatePenilaianKustom(tenantId, data.penilaianKustom)
 
       const [oldSetoran] = await db.select().from(setoran).where(
         and(

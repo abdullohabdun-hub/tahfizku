@@ -22,3 +22,7 @@ export const KUALITAS_LABEL: Record<KualitasBacaan, string> = {
   mengulang: 'Masih Mengulang',
   terbata: 'Terbata-bata',
 }
+
+// Batas waktu untuk edit entri yang membutuhkan validitas data (Setoran, Absensi)
+export const MAX_EDIT_AGE_DAYS = 7;
+export const MAX_EDIT_AGE_MS = MAX_EDIT_AGE_DAYS * 24 * 60 * 60 * 1000;

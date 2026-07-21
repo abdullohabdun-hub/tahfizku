@@ -28,19 +28,10 @@ export const createSetoranSchema = z
       .positive()
       .max(286)
       .optional(),
-    ayatAkhir: z
-      .number({ message: 'Ayat akhir harus berupa angka' })
-      .int()
-      .positive()
-      .max(286)
-      .optional(),
-    kualitas: z.enum(['lancar', 'mengulang', 'terbata'], {
-      message: 'Kualitas harus: lancar, mengulang, atau terbata',
-    }),
-    catatan: z
-      .string()
-      .max(500, 'Catatan maksimal 500 karakter')
-      .optional(),
+    ayatAkhir: z.number().int().min(1).max(286).optional().nullable(),
+    kualitas: z.enum(['lancar', 'mengulang', 'terbata']).optional().nullable(),
+    penilaianKustom: z.record(z.any()).optional().nullable(),
+    catatan: z.string().max(500, { message: 'Catatan maksimal 500 karakter' }).optional().nullable(),
   })
   .superRefine((data, ctx) => {
     if (data.jenis === 'ziyadah') {
@@ -92,7 +83,8 @@ export const createLaporanSchema = z
       .max(286),
     kualitasMandiri: z.enum(['lancar', 'mengulang', 'terbata'], {
       message: 'Kualitas harus: lancar, mengulang, atau terbata',
-    }),
+    }).optional().nullable(),
+    penilaianKustom: z.record(z.string(), z.any()).optional().nullable(),
     catatan: z
       .string()
       .max(500, 'Catatan maksimal 500 karakter')

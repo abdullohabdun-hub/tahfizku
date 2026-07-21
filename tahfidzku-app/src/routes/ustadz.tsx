@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useLocation, useRouter } from "@tanstack/react-router"
-import { Home, PlusCircle, History, Award, Clock, LogOut, BookOpen } from "lucide-react"
+import { Home, PlusCircle, History, Award, Clock, LogOut, BookOpen, Calendar } from "lucide-react"
 import { useState, useEffect } from "react"
 import { checkAuth, logout } from "../server-fns/auth"
 import { getTenantInfo } from "../server-fns/admin-settings"
@@ -37,6 +37,7 @@ function UstadzLayout() {
   const navItems = [
     { name: "Beranda", path: "/ustadz", icon: <Home className="w-5 h-5" /> },
     { name: "Input", path: "/ustadz/input", icon: <PlusCircle className="w-5 h-5" /> },
+    { name: "Absensi", path: "/ustadz/absensi", icon: <Calendar className="w-5 h-5" /> },
     { name: "Pantau", path: "/ustadz/pantau", icon: <Clock className="w-5 h-5" /> },
     { name: "Ujian", path: "/ustadz/ujian", icon: <Award className="w-5 h-5" /> },
     { name: "Riwayat", path: "/ustadz/riwayat", icon: <History className="w-5 h-5" /> },

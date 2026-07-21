@@ -3,8 +3,9 @@
 
 import { createServerFn } from '@tanstack/react-start'
 import { eq, or } from 'drizzle-orm'
+import bcrypt from 'bcryptjs'
 import { db } from '../db'
-import { users } from '../db/schema'
+import { users, tenants } from '../db/schema'
 import { createSession, clearSession, getSession } from '../lib/session'
 import { loginSchema } from '../lib/validators'
 import { success, handleError } from '../lib/response'
@@ -37,9 +38,29 @@ export const login = createServerFn({ method: 'POST' })
         throw new AuthenticationError('Data pengguna tidak ditemukan.')
       }
 
-      // ── Verifikasi Password (PIN) ──
-      if (user.passwordHash !== data.password) {
+      // 🔴 Verifikasi Password (PIN) 🔴
+      let isPasswordValid = false
+      if (user.passwordHash.startsWith('$2a$') || user.passwordHash.startsWith('$2b$')) {
+        isPasswordValid = await bcrypt.compare(data.password, user.passwordHash)
+      } else {
+        isPasswordValid = user.passwordHash === data.password
+      }
+
+      if (!isPasswordValid) {
          throw new AuthenticationError('Nomor HP/Email/Username atau PIN Anda kurang tepat.')
+      }
+
+      // ── Cek Status Tenant & Bypass Superadmin ──
+      if (user.id !== process.env.SUPERADMIN_USER_ID) {
+        const [tenantData] = await db
+          .select({ status: tenants.status })
+          .from(tenants)
+          .where(eq(tenants.id, user.tenantId))
+          .limit(1)
+
+        if (tenantData?.status === 'suspend') {
+          throw new AuthenticationError('Akses lembaga ini sedang ditangguhkan. Hubungi administrator lembaga Anda.')
+        }
       }
 
       // ── Buat Session JWT ──
@@ -80,5 +101,8 @@ export const logout = createServerFn({ method: 'POST' }).handler(async () => {
 export const checkAuth = createServerFn({ method: 'POST' }).handler(async () => {
   const session = await getSession()
   if (!session) return null
-  return session.user
+  return {
+    ...session.user,
+    isSuperAdmin: session.user.id === process.env.SUPERADMIN_USER_ID
+  }
 })

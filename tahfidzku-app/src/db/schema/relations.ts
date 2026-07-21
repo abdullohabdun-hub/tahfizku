@@ -3,9 +3,11 @@ import { tenants } from './tenants'
 import { users } from './users'
 import { kelas } from './kelas'
 import { santri } from './santri'
-import { setoran } from './setoran'
+import { setoran, rubrikPenilaian, rubrikOpsi } from './setoran'
 import { ujian } from './ujian'
 import { impersonationLogs } from './impersonation'
+import { billingLogs } from './billing-logs'
+import { absensi, sesiKelas } from './absensi'
 
 export const tenantsRelations = relations(tenants, ({ many }) => ({
   users: many(users),
@@ -13,6 +15,8 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
   santri: many(santri),
   setoran: many(setoran),
   ujian: many(ujian),
+  impersonationLogs: many(impersonationLogs),
+  billingLogs: many(billingLogs),
 }))
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -91,6 +95,63 @@ export const impersonationLogsRelations = relations(impersonationLogs, ({ one })
   }),
   admin: one(users, {
     fields: [impersonationLogs.adminId],
+    references: [users.id],
+  }),
+}))
+
+export const billingLogsRelations = relations(billingLogs, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [billingLogs.tenantId],
+    references: [tenants.id],
+  }),
+}))
+
+export const rubrikPenilaianRelations = relations(rubrikPenilaian, ({ many }) => ({
+  opsi: many(rubrikOpsi),
+}))
+
+export const rubrikOpsiRelations = relations(rubrikOpsi, ({ one }) => ({
+  rubrik: one(rubrikPenilaian, {
+    fields: [rubrikOpsi.rubrikId],
+    references: [rubrikPenilaian.id],
+  }),
+}))
+
+export const sesiKelasRelations = relations(sesiKelas, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [sesiKelas.tenantId],
+    references: [tenants.id],
+  }),
+  kelas: one(kelas, {
+    fields: [sesiKelas.kelasId],
+    references: [kelas.id],
+  }),
+  createdBy: one(users, {
+    fields: [sesiKelas.createdBy],
+    references: [users.id],
+  }),
+  absensi: many(absensi),
+}))
+
+export const absensiRelations = relations(absensi, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [absensi.tenantId],
+    references: [tenants.id],
+  }),
+  sesiKelas: one(sesiKelas, {
+    fields: [absensi.sesiKelasId],
+    references: [sesiKelas.id],
+  }),
+  santri: one(santri, {
+    fields: [absensi.santriId],
+    references: [santri.id],
+  }),
+  createdBy: one(users, {
+    fields: [absensi.createdBy],
+    references: [users.id],
+  }),
+  updatedBy: one(users, {
+    fields: [absensi.updatedBy],
     references: [users.id],
   }),
 }))

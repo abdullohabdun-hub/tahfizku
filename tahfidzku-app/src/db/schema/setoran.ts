@@ -5,6 +5,7 @@ import { pgTable, uuid, varchar, integer, text, timestamp, pgEnum, real, boolean
 import { tenants } from './tenants'
 import { santri } from './santri'
 import { users } from './users'
+import { uniqueIndex } from 'drizzle-orm/pg-core'
 
 export const jenisSetoranEnum = pgEnum('jenis_setoran', ['ziyadah', 'sabqi', 'manzil'])
 export const kualitasEnum = pgEnum('kualitas_bacaan', ['lancar', 'mengulang', 'terbata'])
@@ -32,11 +33,34 @@ export const setoran = pgTable('setoran', {
   ayatAwal: integer('ayat_awal'),
   ayatAkhir: integer('ayat_akhir'),
   surahMeta: jsonb('surah_meta').$type<Record<string, any>>(),
-  kualitas: kualitasEnum('kualitas').notNull(),
+  kualitas: kualitasEnum('kualitas'), // DROP NOT NULL
+  penilaianKustom: jsonb('penilaian_kustom').$type<Record<string, any>>(),
   catatan: text('catatan'),
   sumber: sumberSetoranEnum('sumber').notNull().default('ustadz'),
   updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
   previousData: jsonb('previous_data').$type<Record<string, any>>(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+export const rubrikPenilaian = pgTable('rubrik_penilaian', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  key: varchar('key', { length: 50 }).notNull(), // 'kualitas', slug identifier stabil
+  label: varchar('label', { length: 100 }).notNull(), // "Kualitas Hafalan" (bisa diganti admin)
+  urutan: integer('urutan').notNull().default(0),
+  aktif: boolean('aktif').notNull().default(true),
+}, (table) => {
+  return {
+    uniqKeyPerTenant: uniqueIndex('uniq_rubrik_key_tenant').on(table.tenantId, table.key),
+  }
+})
+
+export const rubrikOpsi = pgTable('rubrik_opsi', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  rubrikId: uuid('rubrik_id').notNull().references(() => rubrikPenilaian.id, { onDelete: 'cascade' }),
+  value: varchar('value', { length: 50 }).notNull(), // stabil, dipakai sebagai kunci simpan
+  label: varchar('label', { length: 100 }).notNull(), // teks yang admin bisa ganti
+  poin: integer('poin'), // opsional, untuk lembaga yang mau skor numerik
+  urutan: integer('urutan').notNull().default(0),
 })

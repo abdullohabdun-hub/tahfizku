@@ -4,6 +4,8 @@ import { getRiwayatSetoranSantri, updateSetoranSantri } from '../../server-fns/s
 import { Loader2, History, AlertCircle, Calendar, Edit2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
+import { getAllRubrikTenant } from '../../server-fns/rubrik'
+import { FormatPenilaian } from '../../components/FormatPenilaian'
 import { EditSetoranModal } from '../../components/EditSetoranModal'
 
 export const Route = createFileRoute('/santri/riwayat')({
@@ -25,6 +27,7 @@ const JENIS_MAP = {
 function SantriRiwayatSetoran() {
   const router = useRouter()
   const [data, setData] = useState<any[]>([])
+  const [rubrikAktif, setRubrikAktif] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -35,8 +38,10 @@ function SantriRiwayatSetoran() {
     try {
       setLoading(true)
       const res = await getRiwayatSetoranSantri()
+      const rubrikRes = await getAllRubrikTenant()
       if (res.success) {
         setData(res.data)
+        setRubrikAktif(rubrikRes)
       } else {
         setErrorMsg(res.error?.message || 'Gagal memuat riwayat')
       }
@@ -102,7 +107,6 @@ function SantriRiwayatSetoran() {
           </div>
         ) : (
           data.map((item) => {
-             const km = item.kualitas ? KUALITAS_MAP[item.kualitas as keyof typeof KUALITAS_MAP] : null
              const jm = JENIS_MAP[item.jenis as keyof typeof JENIS_MAP]
              const isSelfReport = item.sumber === 'santri_self_report'
 
@@ -132,16 +136,12 @@ function SantriRiwayatSetoran() {
                         {format(new Date(item.createdAt), 'dd MMM yyyy, HH:mm', { locale: id })}
                      </p>
                      <h3 className="font-bold text-slate-800 text-base leading-tight">
-                       {item.surahMeta?.label || (item.surah ? `${item.surah} ${item.ayatAwal}-${item.ayatAkhir}` : `Juz ${item.juz}`)}
+                       {item.surahMeta?.label || (item.surah ? `${item.surah} ${item.ayatAwal}-${item.ayatAkhir}` : `Juz ${item.lintasJuz ? `${item.juzMulai}-${item.juzSelesai}` : (item.juzMulai || item.juz)}`)}
                      </h3>
                    </div>
                    
                    {/* Kualitas - Hanya tampil jika ada dan diisi */}
-                   {km && (
-                     <div className={`px-2 py-1 rounded border text-[10px] font-bold uppercase tracking-wider ${km.color} shrink-0 ml-3`}>
-                       {km.label}
-                     </div>
-                   )}
+                   <FormatPenilaian item={item} rubrikAktif={rubrikAktif} />
                  </div>
 
                  {item.catatan && (

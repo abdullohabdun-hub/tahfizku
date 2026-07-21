@@ -60,7 +60,7 @@ function LoginPage() {
             Masuk ke TahfidzKu
           </CardTitle>
           <CardDescription className="text-gray-500 text-sm">
-            Masukkan Username / No WA / Email dan PIN Anda
+            Masukkan Username / No WA / Email dan PIN / Kata Sandi Anda
           </CardDescription>
         </CardHeader>
         
@@ -86,15 +86,14 @@ function LoginPage() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="pin" className="text-gray-700 font-medium">PIN Masuk</Label>
+              <Label htmlFor="pin" className="text-gray-700 font-medium">PIN / Kata Sandi</Label>
               <Input
                 id="pin"
                 type="password"
-                placeholder="Masukkan 6 digit PIN"
+                placeholder="Masukkan PIN / Kata Sandi"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="h-12 border-gray-200 focus-visible:ring-emerald-500 rounded-xl text-center tracking-widest text-lg"
-                maxLength={6}
                 required
               />
             </div>

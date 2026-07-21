@@ -8,6 +8,8 @@ import { success, handleError } from '../../lib/response'
 import { format } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { BookOpen, Clock } from 'lucide-react'
+import { getAllRubrikTenant } from '../../server-fns/rubrik'
+import { FormatPenilaian } from '../../components/FormatPenilaian'
 
 // Backend Function
 export const getPantauanMurojaah = createServerFn({ method: 'GET' })
@@ -28,6 +30,7 @@ export const getPantauanMurojaah = createServerFn({ method: 'GET' })
           halamanAkhir: setoran.halamanAkhir,
           surat: setoran.surah,
           kualitas: setoran.kualitas,
+          penilaianKustom: setoran.penilaianKustom,
           santriNama: santri.nama,
         })
         .from(setoran)
@@ -55,12 +58,16 @@ export const Route = createFileRoute('/ustadz/pantau')({
   loader: async () => {
     const res = await getPantauanMurojaah()
     if (!res.success) throw new Error(res.error?.message)
-    return res.data
+    const rubrikRes = await getAllRubrikTenant()
+    return {
+      riwayat: res.data,
+      rubrikAktif: rubrikRes
+    }
   }
 })
 
 function UstadzPantauMurojaah() {
-  const riwayat = Route.useLoaderData() || []
+  const { riwayat, rubrikAktif } = Route.useLoaderData() || { riwayat: [], rubrikAktif: [] }
 
   return (
     <div className="space-y-6">
@@ -104,16 +111,10 @@ function UstadzPantauMurojaah() {
                 </div>
                 <div className="flex items-center gap-4 md:text-right ml-14 md:ml-0">
                   <div>
-                    <div className="text-xs text-slate-400 mb-1">
+                    <div className="text-xs text-slate-400 mb-1 text-right">
                       {format(new Date(item.tanggal), 'd MMM yyyy, HH:mm', { locale: id })}
                     </div>
-                    <span className={`text-xs font-semibold px-2 py-1 rounded-md ${
-                      item.kualitas === 'lancar' ? 'bg-emerald-100 text-emerald-700' : 
-                      item.kualitas === 'mengulang' ? 'bg-blue-100 text-blue-700' : 
-                      'bg-red-100 text-red-700'
-                    }`}>
-                      {item.kualitas}
-                    </span>
+                    <FormatPenilaian item={item} rubrikAktif={rubrikAktif} />
                   </div>
                 </div>
               </div>

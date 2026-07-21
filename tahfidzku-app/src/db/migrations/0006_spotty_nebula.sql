@@ -1,0 +1,1 @@
+ALTER TABLE "tenants" ADD COLUMN "trial_warning_sent" boolean DEFAULT false NOT NULL;

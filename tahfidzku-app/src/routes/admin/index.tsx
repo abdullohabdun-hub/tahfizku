@@ -1,14 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useState, useEffect } from "react"
-import { Users, UserSquare2, CheckCircle2, TrendingUp, Settings, Database, PlusCircle, Loader2, GraduationCap } from "lucide-react"
+import { Users, Contact, Activity, TrendingUp, Settings, FileSpreadsheet, UserPlus, UserCog, Award, Loader2, AlertTriangle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
 import { getAdminDashboardStats } from "../../server-fns/dashboard"
+import { getAllRubrikTenant } from "../../server-fns/rubrik"
+import { FormatPenilaian } from "../../components/FormatPenilaian"
 
 export const Route = createFileRoute('/admin/')({
   component: Dashboard,
+  loader: async () => {
+    const rubrikRes = await getAllRubrikTenant()
+    return {
+      rubrikAktif: rubrikRes
+    }
+  }
 })
 
 function Dashboard() {
+  const { rubrikAktif } = Route.useLoaderData()
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
   
   const [statsData, setStatsData] = useState<any>(null)
@@ -42,26 +51,38 @@ function Dashboard() {
     {
       title: "Total Santri",
       value: statsData?.totalSantri || "0",
-      icon: <Users className="h-5 w-5 text-emerald-600" />,
+      icon: <Users className="h-6 w-6 text-emerald-600" />,
       description: "Santri aktif terdaftar",
+      bgColor: "bg-emerald-50",
+      borderColor: "border-emerald-100/50",
+      textColor: "text-emerald-600",
     },
     {
       title: "Total Ustadz",
       value: statsData?.totalUstadz || "0",
-      icon: <UserSquare2 className="h-5 w-5 text-blue-600" />,
+      icon: <Contact className="h-6 w-6 text-blue-600" />,
       description: "Muhaffizh pengajar",
+      bgColor: "bg-blue-50",
+      borderColor: "border-blue-100/50",
+      textColor: "text-blue-600",
     },
     {
       title: "Setoran Hari Ini",
       value: statsData?.totalSetoranHariIni || "0",
-      icon: <CheckCircle2 className="h-5 w-5 text-purple-600" />,
+      icon: <Activity className="h-6 w-6 text-purple-600" />,
       description: "Telah menyetor hafalan",
+      bgColor: "bg-purple-50",
+      borderColor: "border-purple-100/50",
+      textColor: "text-purple-600",
     },
     {
       title: "Status Sistem",
       value: "Aktif",
-      icon: <TrendingUp className="h-5 w-5 text-amber-600" />,
+      icon: <TrendingUp className="h-6 w-6 text-amber-600" />,
       description: "Semua sistem berjalan lancar",
+      bgColor: "bg-amber-50",
+      borderColor: "border-amber-100/50",
+      textColor: "text-amber-600",
     }
   ]
 
@@ -75,8 +96,24 @@ function Dashboard() {
     return new Date(dateStr).toLocaleDateString('id-ID')
   }
 
+  const isTrial = statsData?.tenantStatus === 'trial' && statsData?.trialEndsAt !== null
+  const trialEnds = statsData?.trialEndsAt ? new Date(statsData.trialEndsAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
+
   return (
     <div className="space-y-6 pb-24">
+      {isTrial && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="font-semibold text-amber-900">Masa Trial (Percobaan)</h3>
+            <p className="text-amber-800 text-sm mt-1">
+              Lembaga Anda sedang dalam masa percobaan yang akan berakhir pada <b>{trialEnds}</b>.
+              Silakan hubungi tim TahfidzKu untuk melakukan verifikasi dan aktivasi akun permanen.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900">Ahlan wa Sahlan, Administrator!</h2>
@@ -87,113 +124,66 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Quick Menu Widget */}
-      <section>
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <Link to="/admin/santri" className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition-colors shadow-sm">
-            <div className="w-10 h-10 bg-emerald-200 text-emerald-700 rounded-full flex items-center justify-center shrink-0">
-              <PlusCircle className="w-5 h-5" />
-            </div>
-            <span className="font-semibold text-emerald-900 text-sm">Tambah Santri</span>
-          </Link>
-          <Link to="/admin/ustadz" className="bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition-colors shadow-sm">
-            <div className="w-10 h-10 bg-blue-200 text-blue-700 rounded-full flex items-center justify-center shrink-0">
-              <UserSquare2 className="w-5 h-5" />
-            </div>
-            <span className="font-semibold text-blue-900 text-sm">Kelola Ustadz</span>
-          </Link>
-          <Link to="/admin/laporan" className="bg-amber-50 hover:bg-amber-100 border border-amber-100 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition-colors shadow-sm">
-            <div className="w-10 h-10 bg-amber-200 text-amber-700 rounded-full flex items-center justify-center shrink-0">
-              <Database className="w-5 h-5" />
-            </div>
-            <span className="font-semibold text-amber-900 text-sm">Laporan Bulanan</span>
-          </Link>
-          <Link to="/admin/ujian" className="bg-purple-50 hover:bg-purple-100 border border-purple-100 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition-colors shadow-sm">
-            <div className="w-10 h-10 bg-purple-200 text-purple-700 rounded-full flex items-center justify-center shrink-0">
-              <GraduationCap className="w-5 h-5" />
-            </div>
-            <span className="font-semibold text-purple-900 text-sm">Riwayat Ujian</span>
-          </Link>
-          <Link to="/admin/pengaturan" className="bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl p-4 flex items-center gap-3 cursor-pointer transition-colors shadow-sm">
-            <div className="w-10 h-10 bg-slate-300 text-slate-700 rounded-full flex items-center justify-center shrink-0">
-              <Settings className="w-5 h-5" />
-            </div>
-            <span className="font-semibold text-slate-900 text-sm">Pengaturan Web</span>
-          </Link>
-        </div>
-      </section>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, i) => (
-          <Card key={i} className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-600">
-                {stat.title}
-              </CardTitle>
-              <div className="p-2 bg-slate-50 rounded-md">
+          <div key={i} className="bg-white rounded-2xl p-6 shadow-sm shadow-slate-200/50 border border-slate-100 hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden group">
+            <div className={`absolute top-0 right-0 w-32 h-32 ${stat.bgColor} rounded-bl-full -z-10 opacity-50 group-hover:scale-110 transition-transform duration-500`}></div>
+            <div className="flex justify-between items-start">
+              <div>
+                <p className={`text-sm font-medium ${stat.textColor} tracking-wide uppercase opacity-80`}>{stat.title}</p>
+                <h3 className={`text-3xl font-bold ${stat.textColor} mt-2 tracking-tight`}>{stat.value}</h3>
+              </div>
+              <div className={`p-3 ${stat.bgColor} rounded-xl border ${stat.borderColor}`}>
                 {stat.icon}
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-slate-900">{stat.value}</div>
-              <p className="text-xs text-slate-500 mt-1">
-                {stat.description}
-              </p>
-            </CardContent>
-          </Card>
+            </div>
+            <p className="text-xs text-slate-500 mt-4">{stat.description}</p>
+          </div>
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4 border-slate-200 shadow-sm">
-          <CardHeader>
-            <CardTitle>Grafik Setoran Mingguan</CardTitle>
-          </CardHeader>
-          <CardContent className="h-72 flex flex-col items-center justify-center bg-slate-50 rounded-md m-6 mt-0 border border-slate-100 border-dashed">
-            <p className="text-slate-400">Pembaruan Data Grafik Segera Hadir</p>
-            <p className="text-xs text-slate-400 mt-2 italic">*Catatan: Grafik aktivitas murojaah (jumlah halaman) tercatat mulai Juli 2026.</p>
-          </CardContent>
-        </Card>
-        <Card className="col-span-3 border-slate-200 shadow-sm">
-          <CardHeader>
-            <CardTitle>Setoran Terakhir</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {statsData?.recentSetoran?.length === 0 ? (
-                <p className="text-slate-500 text-sm italic text-center py-4">Belum ada setoran masuk.</p>
-              ) : (
-                statsData?.recentSetoran?.map((item: any, i: number) => {
-                  let infoTarget = ''
-                  if (item.jenis === 'ziyadah') {
-                    infoTarget = `${item.surah || ''}: ${item.ayatAwal || ''}-${item.ayatAkhir || ''}`
-                  } else {
-                    infoTarget = `Juz ${item.juz || ''} Hal ${item.halamanAwal || ''}-${item.halamanAkhir || ''}`
-                  }
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+        <div className="col-span-4 bg-white rounded-2xl p-6 shadow-sm shadow-slate-200/50 border border-slate-100">
+          <h3 className="font-bold text-lg text-slate-800 mb-6">Grafik Setoran Mingguan</h3>
+          <div className="h-64 flex flex-col items-center justify-center bg-slate-50/50 rounded-xl border border-slate-100 border-dashed">
+            <p className="text-slate-400 font-medium">Pembaruan Data Grafik Segera Hadir</p>
+            <p className="text-xs text-slate-400 mt-2 italic">*Catatan: Grafik aktivitas murojaah tercatat mulai Juli 2026.</p>
+          </div>
+        </div>
+        
+        <div className="col-span-3 bg-white rounded-2xl p-6 shadow-sm shadow-slate-200/50 border border-slate-100 flex flex-col h-full">
+          <h3 className="font-bold text-lg text-slate-800 mb-6">Setoran Terakhir</h3>
+          <div className="space-y-4 overflow-y-auto custom-scrollbar flex-1 -mx-2 px-2" style={{ maxHeight: '300px' }}>
+            {statsData?.recentSetoran?.length === 0 ? (
+              <p className="text-slate-500 text-sm italic text-center py-4">Belum ada setoran masuk.</p>
+            ) : (
+              statsData?.recentSetoran?.map((item: any, i: number) => {
+                let infoTarget = ''
+                if (item.jenis === 'ziyadah') {
+                  const surahName = item.surah || (item.surahMeta && item.surahMeta.length > 0 ? item.surahMeta[0].nama : 'Unknown')
+                  infoTarget = `${surahName}: ${item.ayatAwal || ''}-${item.ayatAkhir || ''}`
+                } else {
+                  const juzVal = item.lintasJuz ? `${item.juzMulai}-${item.juzSelesai}` : (item.juzMulai || item.juz)
+                  infoTarget = `Juz ${juzVal || ''} Hal ${item.halamanAwal || ''}-${item.halamanAkhir || ''}`
+                }
 
-                  return (
-                    <div key={i} className="flex items-center justify-between border-b border-slate-100 last:border-0 pb-4 last:pb-0">
-                      <div>
-                        <p className="font-medium text-sm text-slate-900">{item.santriNama}</p>
-                        <p className="text-xs text-slate-500 capitalize">{item.jenis} • {infoTarget}</p>
-                      </div>
-                      <div className="text-right">
-                        <span className={`inline-block px-2 py-1 rounded text-[10px] font-medium mb-1 capitalize
-                          ${item.kualitas === 'lancar' ? 'bg-emerald-100 text-emerald-700' : 
-                            item.kualitas === 'mengulang' ? 'bg-amber-100 text-amber-700' : 
-                            'bg-red-100 text-red-700'}
-                        `}>
-                          {item.kualitas}
-                        </span>
-                        <p className="text-[10px] text-slate-400">{formatRelativeTime(item.createdAt)}</p>
-                      </div>
+                return (
+                  <div key={i} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-100 group">
+                    <div>
+                      <p className="font-semibold text-sm text-slate-900">{item.santriNama}</p>
+                      <p className="text-xs text-slate-500 capitalize mt-0.5 group-hover:text-slate-600 transition-colors">{item.jenis} • {infoTarget}</p>
                     </div>
-                  )
-                })
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                    <div className="text-right flex flex-col items-end">
+                      <FormatPenilaian item={item} rubrikAktif={rubrikAktif} />
+                      <p className="text-[10px] text-slate-400 mt-1">{formatRelativeTime(item.createdAt)}</p>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )

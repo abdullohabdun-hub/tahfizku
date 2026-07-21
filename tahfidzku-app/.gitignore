@@ -14,3 +14,20 @@ todos.json
 
 .vercel
 .env*
+
+# Log and Temp files
+*.log
+npm-debug.log*
+scratch/
+temp/
+
+# One-off Debug scripts
+check-*.ts
+scratch-*.ts
+replace-*.cjs
+patch-*.cjs
+query-*.ts
+reset-*.ts
+test-*.ts
+test-*.txt
+password.txt

@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { getSantriDashboardData } from '../../server-fns/dashboard'
+import { getSantriDashboard } from '../../server-fns/dashboard'
+import { getAllRubrikTenant } from '../../server-fns/rubrik'
+import { FormatPenilaian } from '../../components/FormatPenilaian'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Flame, Target, BookOpen, Clock, GraduationCap } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, CartesianGrid } from 'recharts'
@@ -11,14 +13,18 @@ import { Button } from '../../components/ui/button'
 export const Route = createFileRoute('/santri/')({
   component: SantriDashboard,
   loader: async () => {
-    const res = await getSantriDashboardData()
+    const res = await getSantriDashboard()
     if (!res.success) throw new Error(res.error?.message || 'Gagal memuat data')
-    return res.data
+    const rubrikRes = await getAllRubrikTenant()
+    return {
+      data: res.data!,
+      rubrikAktif: rubrikRes
+    }
   }
 })
 
 function SantriDashboard() {
-  const data = Route.useLoaderData()
+  const { data, rubrikAktif } = Route.useLoaderData()
   const profil = data?.profil
   const riwayat = data?.riwayat || []
   const progress = data?.progress
@@ -194,7 +200,10 @@ function SantriDashboard() {
                       </span>
                     </div>
                     {item.surah && <p className="font-semibold text-slate-800 text-sm">Surat {item.surah}</p>}
-                    <p className="text-xs text-slate-500 mt-0.5">Juz {item.juz} • Hal {item.halamanAwal === item.halamanAkhir ? item.halamanAwal : `${item.halamanAwal}-${item.halamanAkhir}`} • {item.kualitas}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <p className="text-xs text-slate-500">Juz {item.juz} • Hal {item.halamanAwal === item.halamanAkhir ? item.halamanAwal : `${item.halamanAwal}-${item.halamanAkhir}`} •</p>
+                      <FormatPenilaian item={item} rubrikAktif={rubrikAktif} />
+                    </div>
                   </div>
                 </div>
               ))}

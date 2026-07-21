@@ -9,6 +9,8 @@ export const Route = createFileRoute('/admin/kelas')({
   component: DataKelasPage,
 })
 
+const HARI_OPTIONS = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu', 'minggu']
+
 function DataKelasPage() {
   const [kelasList, setKelasList] = useState<any[]>([])
   const [ustadzList, setUstadzList] = useState<any[]>([])
@@ -19,6 +21,10 @@ function DataKelasPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [nama, setNama] = useState('')
   const [ustadzId, setUstadzId] = useState('')
+  const [hariPertemuan, setHariPertemuan] = useState<string[]>([])
+  const [jamMulai, setJamMulai] = useState('')
+  const [jamSelesai, setJamSelesai] = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   async function loadData() {
@@ -38,9 +44,23 @@ function DataKelasPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorMsg('')
+    if (jamMulai && jamSelesai && jamSelesai <= jamMulai) {
+      setErrorMsg('Jam selesai harus lebih akhir dari jam mulai')
+      return
+    }
+
     setSubmitting(true)
 
-    const payload = { data: { nama, ustadzId: ustadzId ? ustadzId : undefined } }
+    const payload = { 
+      data: { 
+        nama, 
+        ustadzId: ustadzId ? ustadzId : undefined,
+        hariPertemuan,
+        jamMulai: jamMulai || undefined,
+        jamSelesai: jamSelesai || undefined,
+      } 
+    }
     
     let res;
     if (editingId) {
@@ -63,6 +83,9 @@ function DataKelasPage() {
     setEditingId(k.id)
     setNama(k.nama)
     setUstadzId(k.ustadzId || '')
+    setHariPertemuan(k.hariPertemuan || [])
+    setJamMulai(k.jamMulai ? k.jamMulai.substring(0, 5) : '')
+    setJamSelesai(k.jamSelesai ? k.jamSelesai.substring(0, 5) : '')
     setShowForm(true)
   }
 
@@ -71,6 +94,10 @@ function DataKelasPage() {
     setEditingId(null)
     setNama('')
     setUstadzId('')
+    setHariPertemuan([])
+    setJamMulai('')
+    setJamSelesai('')
+    setErrorMsg('')
   }
 
   const handleDelete = async (id: string) => {
@@ -113,6 +140,35 @@ function DataKelasPage() {
                 ))}
               </select>
             </div>
+            <div className="pt-2 border-t border-slate-100">
+              <label className="block text-sm font-medium mb-2">Jadwal Pertemuan (Opsional)</label>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {HARI_OPTIONS.map(hari => {
+                  const isSelected = hariPertemuan.includes(hari)
+                  return (
+                    <button type="button" key={hari} 
+                      onClick={() => {
+                        setHariPertemuan(prev => isSelected ? prev.filter(h => h !== hari) : [...prev, hari])
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${isSelected ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'}`}
+                    >
+                      {hari}
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="block text-xs text-slate-500 mb-1">Jam Mulai</label>
+                  <input type="time" value={jamMulai} onChange={e => setJamMulai(e.target.value)} className="w-full border p-2 rounded-lg" />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs text-slate-500 mb-1">Jam Selesai</label>
+                  <input type="time" value={jamSelesai} onChange={e => setJamSelesai(e.target.value)} className="w-full border p-2 rounded-lg" />
+                </div>
+              </div>
+              {errorMsg && <p className="text-red-500 text-xs mt-2">{errorMsg}</p>}
+            </div>
             <div className="flex gap-2 pt-2">
               <Button type="button" variant="outline" onClick={handleCloseForm}>Batal</Button>
               <Button type="submit" disabled={submitting} className="bg-emerald-600 hover:bg-emerald-700">
@@ -133,13 +189,14 @@ function DataKelasPage() {
               <tr>
                 <th className="p-4 font-semibold text-slate-600">Nama Kelas</th>
                 <th className="p-4 font-semibold text-slate-600">Ustadz Pengampu</th>
+                <th className="p-4 font-semibold text-slate-600">Jadwal</th>
                 <th className="p-4 font-semibold text-slate-600 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {kelasList.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="p-4 text-center text-slate-500">Belum ada data kelas</td>
+                  <td colSpan={4} className="p-4 text-center text-slate-500">Belum ada data kelas</td>
                 </tr>
               ) : (
                 kelasList.map(k => (
@@ -152,6 +209,18 @@ function DataKelasPage() {
                     </td>
                     <td className="p-4 text-slate-600">
                       {k.ustadzNama ? <span className="font-medium text-emerald-700">Ust. {k.ustadzNama}</span> : <span className="text-slate-400 italic">Belum ada</span>}
+                    </td>
+                    <td className="p-4">
+                      {k.hariPertemuan && k.hariPertemuan.length > 0 ? (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
+                          <span className="capitalize">{k.hariPertemuan.join(', ')}</span>
+                          {(k.jamMulai || k.jamSelesai) && ` · ${k.jamMulai?.substring(0,5) || ''}–${k.jamSelesai?.substring(0,5) || ''}`}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                          Jadwal belum diatur
+                        </span>
+                      )}
                     </td>
                     <td className="p-4 text-right flex justify-end gap-2">
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(k)} className="text-blue-500 hover:text-blue-700 hover:bg-blue-50">

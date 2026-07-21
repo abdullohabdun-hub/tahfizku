@@ -51,6 +51,12 @@ export function handleError(err: unknown): ApiError {
     return error(appErr.code, appErr.message, appErr.details)
   }
 
+  // Cek apakah error dari database (PostgreSQL unique violation) yang dibungkus oleh Drizzle Neon Serverless
+  const dbErr = err as any
+  if (dbErr.code === '23505' || dbErr.cause?.code === '23505') {
+    return error('CONFLICT', 'Data yang Anda masukkan berkonflik atau sudah ada/duplikat di sistem.')
+  }
+
   // Fallback: error generik
   return error(
     'INTERNAL_ERROR',

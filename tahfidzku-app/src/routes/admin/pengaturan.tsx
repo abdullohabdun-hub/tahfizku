@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { Settings, Save, Loader2, Building, Link as LinkIcon } from 'lucide-react'
 import { getTenantInfo, updateTenantInfo, runDbMigration } from '../../server-fns/admin-settings'
 import { Button } from '../../components/ui/button'
+import { RubrikSettings } from '../../components/admin/RubrikSettings'
 
 export const Route = createFileRoute('/admin/pengaturan')({
   component: PengaturanPage,
@@ -113,6 +114,8 @@ function PengaturanPage() {
           </form>
         </div>
       </div>
+
+      <RubrikSettings />
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-6 mt-8">
         <h3 className="font-semibold text-lg text-slate-800 mb-2">Sistem Database</h3>

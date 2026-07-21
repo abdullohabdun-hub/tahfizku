@@ -31,6 +31,9 @@ export const getKelasList = createServerFn({ method: 'POST' }).handler(
         nama: k.nama,
         ustadzId: k.ustadzId,
         ustadzNama: k.ustadz?.nama || null,
+        hariPertemuan: k.hariPertemuan,
+        jamMulai: k.jamMulai,
+        jamSelesai: k.jamSelesai,
       }))
 
       return success(mapped, 'Berhasil mengambil daftar kelas')
@@ -43,8 +46,17 @@ export const getKelasList = createServerFn({ method: 'POST' }).handler(
 export const createKelas = createServerFn({ method: 'POST' })
   .validator((data: unknown) => z.object({ 
     nama: z.string().min(1, 'Nama kelas wajib diisi'),
-    ustadzId: z.string().optional()
-  }).parse(data))
+    ustadzId: z.string().optional(),
+    hariPertemuan: z.array(z.enum(['senin','selasa','rabu','kamis','jumat','sabtu','minggu']))
+      .default([])
+      .transform(days => [...new Set(days)]),
+    jamMulai: z.string().regex(/^\d{2}:\d{2}$/).optional().nullable(),
+    jamSelesai: z.string().regex(/^\d{2}:\d{2}$/).optional().nullable(),
+  }).refine(d => {
+    if (d.jamMulai && d.jamSelesai) return d.jamSelesai > d.jamMulai
+    return true
+  }, { message: 'Jam selesai harus lebih akhir dari jam mulai', path: ['jamSelesai'] })
+  .parse(data))
   .handler(async ({ data }) => {
     try {
       const session = await getAuthSession()
@@ -54,7 +66,10 @@ export const createKelas = createServerFn({ method: 'POST' })
       const newKelas = await db.insert(kelas).values({
         tenantId: session.user.tenantId,
         nama: data.nama,
-        ustadzId: data.ustadzId || null
+        ustadzId: data.ustadzId || null,
+        hariPertemuan: data.hariPertemuan,
+        jamMulai: data.jamMulai || null,
+        jamSelesai: data.jamSelesai || null,
       }).returning({ id: kelas.id, nama: kelas.nama })
 
       return success(newKelas[0], 'Berhasil membuat Kelas/Halaqoh')
@@ -82,8 +97,17 @@ export const updateKelas = createServerFn({ method: 'POST' })
   .validator((data: unknown) => z.object({ 
     id: z.string(),
     nama: z.string().min(1, 'Nama kelas wajib diisi'),
-    ustadzId: z.string().optional().nullable()
-  }).parse(data))
+    ustadzId: z.string().optional().nullable(),
+    hariPertemuan: z.array(z.enum(['senin','selasa','rabu','kamis','jumat','sabtu','minggu']))
+      .default([])
+      .transform(days => [...new Set(days)]),
+    jamMulai: z.string().regex(/^\d{2}:\d{2}$/).optional().nullable(),
+    jamSelesai: z.string().regex(/^\d{2}:\d{2}$/).optional().nullable(),
+  }).refine(d => {
+    if (d.jamMulai && d.jamSelesai) return d.jamSelesai > d.jamMulai
+    return true
+  }, { message: 'Jam selesai harus lebih akhir dari jam mulai', path: ['jamSelesai'] })
+  .parse(data))
   .handler(async ({ data }) => {
     try {
       const session = await getAuthSession()
@@ -92,7 +116,10 @@ export const updateKelas = createServerFn({ method: 'POST' })
 
       await db.update(kelas).set({
         nama: data.nama,
-        ustadzId: data.ustadzId || null
+        ustadzId: data.ustadzId || null,
+        hariPertemuan: data.hariPertemuan,
+        jamMulai: data.jamMulai || null,
+        jamSelesai: data.jamSelesai || null,
       }).where(and(eq(kelas.id, data.id), eq(kelas.tenantId, session.user.tenantId)))
 
       return success(null, 'Berhasil menyimpan Kelas/Halaqoh')
