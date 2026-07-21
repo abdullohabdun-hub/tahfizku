@@ -17,6 +17,16 @@ function InputSetoranPage() {
   const [santriId, setSantriId] = useState('')
   const selectedSantri = useMemo(() => santriList.find(s => s.id === santriId), [santriId, santriList])
 
+  const santriGrouped = useMemo(() => {
+    const groups: Record<string, typeof santriList> = {}
+    for (const s of santriList) {
+      const kelas = s.kelasNama || 'Tanpa Kelas'
+      if (!groups[kelas]) groups[kelas] = []
+      groups[kelas].push(s)
+    }
+    return groups
+  }, [santriList])
+
   // Setup Hafalan Awal (Santri Baru)
   const [showSetup, setShowSetup] = useState(false)
   const [jumlahJuzSelesai, setJumlahJuzSelesai] = useState(0)
@@ -96,8 +106,14 @@ function InputSetoranPage() {
             onChange={(e) => setSantriId(e.target.value)}
             className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block px-3 py-2.5 pr-8 font-medium"
           >
-            {santriList.map((s) => (
-              <option key={s.id} value={s.id}>{s.nama} ({s.kelas?.nama})</option>
+            {Object.entries(santriGrouped).map(([kelasNama, list]) => (
+              <optgroup key={kelasNama} label={kelasNama}>
+                {list.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nama}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
           <ChevronDown className="h-4 w-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
